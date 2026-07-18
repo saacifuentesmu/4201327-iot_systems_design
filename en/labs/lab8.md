@@ -31,7 +31,7 @@ Labs 1–7 built the system: the mesh, the CoAP contract, the SED valve, the Bor
 
 ## 2. ISO/IEC 30141 placement
 
-**The lens shifts one last time — and the tour completes.** Labs 1–4 climbed the Functional domain ladder; Lab 5 used the Annex A pattern pair; Lab 6 audited Trustworthiness; Lab 7 landed on Usage. One viewpoint was never made dominant: **Business**. The standard lists it *second* — in industry the *why* comes before the *how* — and the course saved it for *last*, on purpose: in week 1 you answered the §8b exercise with speculation; today you answer it with a working mesh, measured battery life, a fleet dashboard, and a binary that survives the chaos script. The Business viewpoint stopped being creative writing and became an **audit**.
+**The tour completes.** One viewpoint was never made dominant: **Business**. The standard lists it *second* — the *why* before the *how* — and the course saved it for last on purpose: in week 1 you answered the §8b exercise with speculation; today you answer it with a working mesh, measured battery life, a fleet dashboard, and a binary that survives the chaos script. The Business viewpoint stopped being creative writing and became an **audit**.
 
 | Lab | Question being held | Lens |
 |---|---|---|

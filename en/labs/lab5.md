@@ -29,12 +29,12 @@ You shipped efficient uplink in [Lab 3](lab3.md) (`/env/temp`, CoAP/CBOR + Obser
 
 ## 2. ISO/IEC 30141 placement
 
-**The lens just changed.** Labs 1–4 climbed the Functional viewpoint's domain ladder (PED → SCD → ASD). Today's primary artifacts are two paired patterns from Annex A of ISO/IEC 30141:2024:
+**The lens just changed.** Labs 1–4 climbed the Functional viewpoint's domain ladder (PED → SCD → ASD). Today's artifacts are two paired patterns from Annex A of ISO/IEC 30141:2024, designed as a pair (the standard says the networking pattern *"uses"* the system pattern):
 
-- **§A.4 / Table A.3 / Figure A.5 — IoT enterprise system pattern** (the *system deployment model*): names the **IoT gateway** as an SCD entity that performs "protocol conversion, address mapping, data processing, information fusion, certification, and equipment management" — a one-line description of what an OTBR does. The OTBR is the canonical SoilSense IoT gateway.
-- **§A.5 / Table A.4 / Figure A.6 — IoT enterprise networking pattern** (the *four networks* connecting those entities): proximity, access, services, user. The standard explicitly says the networking pattern *"uses"* the enterprise system pattern — they're designed as a pair.
+- **§A.4 / Table A.3 / Figure A.5 — enterprise system pattern**: names the **IoT gateway**. The OTBR is the canonical SoilSense IoT gateway.
+- **§A.5 / Table A.4 / Figure A.6 — enterprise networking pattern**: the *four networks* — proximity, access, services, user.
 
-The Border Router *is* the diagram those two tables draw together: an IoT gateway sitting on the boundary between the proximity network and the access network.
+The Border Router *is* what those two tables draw together: an IoT gateway on the boundary between proximity and access.
 
 ```mermaid
 graph LR
@@ -64,11 +64,20 @@ graph LR
     style User fill:#ffd,stroke:#333
 ```
 
-**Four networks, one device at the seam.** The OTBR is a single physical device that has a foot in two of these networks (proximity and access). The other two (services, user) are downstream of the access network and outside your code, but the lab's deliverable is to show the chain.
+**Four networks, one device at the seam.** The OTBR has a foot in two of them (proximity, access); services and user are downstream and outside your code, but the deliverable shows the whole chain.
 
-**Quoting the standard.** Table A.3 (the enterprise system pattern) names the OTBR's job in exactly these words: *"IoT gateways are devices which connect SCD with other domains. IoT gateways provide functions such as protocol conversion, address mapping, data processing, information fusion, certification, and equipment management."* In Lab 5 you implement four of those six. **Protocol conversion** = none for CoAP (same bytes on both sides) but yes for IPv4 (NAT64); **address mapping** = the global prefix SLAAC + the NAT64 `64:ff9b::/96` translation; **data processing** = the OTBR forwards, it doesn't aggregate (that's Lab 7); **certification** = the Thread commissioning trust anchor (network key + PSKc held by the BR's dataset); **equipment management** = `ot child table` / `ot router table` / `ot netdata show` on the BR's CLI — that's the management interface. The two you skip: *information fusion* (Lab 7) and any UI-layer access control (Lab 6 adds DTLS). Cite the exact quote in your DDR §4.
+**The standard names the OTBR's job** (Table A.3, quote this verbatim in your DDR §4): *"IoT gateways are devices which connect SCD with other domains. IoT gateways provide functions such as protocol conversion, address mapping, data processing, information fusion, certification, and equipment management."* Score the OTBR against those six:
 
-**Where the Functional domains still apply (briefly).** If you place this in the six-domain map (Figure A.5): the OTBR is an **SCD entity** — Figure A.5 explicitly draws the "IoT gateway" box inside the SCD, and the Table A.3 prose confirms it (*"IoT gateways are devices which connect SCD with other domains"*). It is *not* the RAID device. **RAID** (Resource Access & Interchange) is a separate domain that hosts the *access management component* and the *interchange subsystem* — the parts of the system that authenticate external consumers and expose ASD/OMD capabilities to them. In SoilSense, RAID will light up in Lab 6 (DTLS as access control) and Lab 7 (the dashboard's API surface), not here. Today the OTBR extends the SCD outward; it doesn't *become* RAID. Don't conflate the three structures: viewpoints (six) ≠ domains (six inside Functional) ≠ patterns (A.1–A.5).
+| Table A.3 function | In SoilSense today |
+|---|---|
+| Protocol conversion | ✅ NAT64 for IPv4 (the CoAP bytes themselves cross unchanged) |
+| Address mapping | ✅ global-prefix SLAAC + the NAT64 `64:ff9b::/96` translation |
+| Certification | ✅ Thread commissioning trust anchor (network key + PSKc in the BR's dataset) |
+| Equipment management | ✅ `ot child table` / `ot router table` / `ot netdata show` on the BR's CLI |
+| Data processing | ⏳ the OTBR forwards, it doesn't aggregate — Lab 7 |
+| Information fusion | ⏳ Lab 7 |
+
+**Placement.** Figure A.5 draws the "IoT gateway" box **inside the SCD** — the OTBR is an SCD entity, *not* RAID. **RAID** (Resource Access & Interchange — access management + interchange to outside consumers) lights up in Lab 6 (DTLS) and Lab 7 (the dashboard API), not here. Don't conflate the three structures: viewpoints (six) ≠ domains (six inside Functional) ≠ patterns (A.1–A.5).
 
 **Functional / management plane separation (ISO §6.2.2.3.3):** the OTBR runs both planes side-by-side on one device. The **functional plane** forwards CoAP/UDP packets between proximity and access. The **management plane** advertises the global prefix to the mesh (SLAAC), advertises mesh routes to the Wi-Fi side (RA), and exposes commissioning + topology over the `ot` CLI on the BR's serial console. Changing commissioning state via `ot commissioner` does not disturb in-flight `coap put` traffic on the functional plane.
 
@@ -140,10 +149,10 @@ Update [your DDR](../3_deliverables_template.md):
 
 - **§2 Lab Log → "Lab 5: Border Router" → To Daniela.** Two short paragraphs: can she see soil temperature from her phone via the cloud now, and how much latency the OTBR adds. Cite the Task C numbers.
 - **§3 ADR-005: Single OTBR for SoilSense pilot.** Context (Daniela's market problem; Edwin's "cloud-down" worry), decision (one OTBR, no redundancy in the pilot, accept single-point-of-failure off-mesh), rationale (cite Task C numbers, the local-first property, cost), status. Note explicitly: when the OTBR dies, the mesh continues — `/act/valve` still works from a node B inside the field; only off-mesh reach is lost. Production deployments would add a second OTBR (covered in Lab 8).
-- **§4 ISO Mapping.** Add two new sub-sections: **enterprise system pattern (Table A.3)** — quote the "IoT gateway" definition from the standard verbatim and list which of its named functions the OTBR provides in SoilSense (see §2 above; five of six); and **enterprise networking pattern (Table A.4)** — paste the §3 four-row table. In the domain map, tag the OTBR as an **SCD-hosted IoT gateway** (matching Figure A.5), *not* as RAID. Do not retitle the SCD and ASD entries from Labs 2–4 — they still describe what they described. **RAID stays gray** until Lab 6 / Lab 7.
+- **§4 ISO Mapping.** Two new sub-sections: the Table A.3 quote + six-function scorecard from §2, and the §3 four-network table. Tag the OTBR as an **SCD-hosted IoT gateway**, not RAID; leave the Lab 2–4 SCD/ASD entries as they are. **RAID stays gray** until Labs 6–7.
 - **§5 First Principles, Lab 5.** One sentence each: why a global IPv6 prefix is what makes the mesh routable from outside (it isn't a "gateway" magic, it's just SLAAC + a route); why NAT64 is needed even though Thread is IPv6 (most of the public internet isn't, yet); why the OTBR is two boards (the host has Wi-Fi but no 802.15.4 radio — classic ESP32 by recommendation, ESP32-S3 also works; the C6's radio is exposed as a spinel-over-UART RCP).
 - **§6 Performance Baselines.** Fill in the "Lab 5: OTBR added latency" and "Lab 5: NAT64 RTT" rows from Task C — targets: OTBR overhead < 50 ms; NAT64 RTT < 200 ms over a typical home Wi-Fi.
-- **§7 Ethics & Sustainability.** Sustainability: prove the local mesh survived an OTBR kill (`ot thread stop` on the BR host, *or* pull its USB, then re-run a `coap put` from Node B to Node V's *mesh-local* address — it should still land). Security: the IDF `ot_br` example has **no web UI and no authenticated control surface**. Whoever holds the serial console controls the BR. In the lab that's fine (USB cable in your hand); in production it would be a finding — production OTBRs are deployed with serial-over-network (SSH gated) or a `otbr-web` GUI behind authentication. Flag this as a production gap in your DDR. Privacy: the global IPv6 prefix the BR advertises is *also visible to anyone on the same Wi-Fi AP*; on a coffee-shop Wi-Fi this would route strangers' packets toward your sensors. That's fine for the lab AP, real concern in production. The Lab 6 answer is DTLS on the CoAP side.
+- **§7 Ethics & Sustainability.** **Sustainability:** prove the mesh survives an OTBR kill — stop or unplug the BR, then land a `coap put` from Node B to Node V's *mesh-local* address. **Security:** the IDF `ot_br` example has no authenticated control surface — whoever holds the serial console controls the BR. Fine with the USB cable in your hand; a finding in production (SSH-gated serial or authenticated `otbr-web`). Flag it as a production gap. **Privacy:** the advertised global prefix routes packets from *anyone on the same Wi-Fi AP* toward your sensors — fine on the lab AP, a real concern in production; Lab 6's DTLS is the answer.
 - **§8 Viewpoint Analysis (first real entry).** Lab 5 is the first lab where you write something in the §8 Viewpoint table beyond Functional. Add a row for the **enterprise system pattern** (entity-level view, Table A.3 / Figure A.5) and one for the **enterprise networking pattern** (network-level view, Table A.4 / Figure A.6). You'll fill more rows in Labs 6–8.
 
 ---
@@ -152,7 +161,7 @@ Update [your DDR](../3_deliverables_template.md):
 
 **Technical execution (40)** — OTBR + RCP brought up; BR is `leader`, Wi-Fi `connected`, `ot br state` is `running`, OMR prefix listed in `ot netdata show` (10) · Node A and Node V re-commissioned onto the OTBR-formed mesh, both gain global addresses (15) · Task C three-row latency table complete (15)
 
-**ISO/IEC 30141 alignment (30)** — Table A.3 IoT-gateway quote + the five-of-six functions cited in DDR §4 (8) · Table A.4 four-network walk filled in DDR §4 (7) · OTBR placed correctly as an **SCD-hosted IoT gateway** (per Figure A.5) *and* as the proximity↔access bridge in the networking pattern — both lenses present, RAID not over-claimed (15)
+**ISO/IEC 30141 alignment (30)** — Table A.3 quote + six-function scorecard in DDR §4 (8) · Table A.4 four-network walk in DDR §4 (7) · OTBR placed as an **SCD-hosted IoT gateway** *and* as the proximity↔access bridge — both lenses present, RAID not over-claimed (15)
 
 **Analysis (20)** — ADR-005 justification with measured numbers, single-OTBR risk explicitly acknowledged (10) · Comparison of `/env/temp` latency in-mesh vs via OTBR, with one sentence per resource on whether the added latency is acceptable (10)
 
