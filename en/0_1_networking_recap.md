@@ -346,4 +346,4 @@ The standard highlights that IoT is an essential enabler for advanced computing 
 ---
 
 ### Navigation
-[< Back to Setup](0_setup.md) | [Next: Project Scenario >](1_project_scenario.md)
+[< Back to Setup](0_0_setup.md) | [Next: Project Scenario >](1_project_scenario.md)

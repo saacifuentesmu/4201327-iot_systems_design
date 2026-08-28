@@ -563,7 +563,7 @@ RAID: OAuth login, API for third-party apps (MyFitnessPal, Strava)
 - Install ESP-IDF v5.1+
 - Verify ESP32-C6 board detected
 - Flash "hello world" example
-- See [0_setup.md](0_setup.md) for instructions
+- See [0_0_setup.md](0_0_setup.md) for instructions
 
 ---
 

@@ -2,6 +2,8 @@
 
 Bilingual (EN/ES) university course: 8 hands-on labs building a Thread mesh IoT system on ESP32-C6, aligned with ISO/IEC 30141:2024.
 
+**Migrating from ESP-IDF to Zephyr.** `en/0_0_setup.md` is Zephyr. Labs 1-8 and the SOPs still document ESP-IDF; port them lab by lab and keep each file internally consistent.
+
 ## Structure
 
 - `en/` — English course content (guides, labs, SOPs)
@@ -14,7 +16,7 @@ Bilingual (EN/ES) university course: 8 hands-on labs building a Thread mesh IoT 
 ## Tech stack
 
 - **Hardware:** ESP32-C6
-- **Frameworks:** ESP-IDF, OpenThread
+- **Frameworks:** Zephyr (target), ESP-IDF (being replaced), OpenThread
 - **Protocols:** Thread (802.15.4), CoAP, CBOR, DTLS, MQTT, HTTP
 - **Tools:** Python 3 (aiocoap, paho-mqtt, Flask)
 
@@ -26,9 +28,10 @@ Bilingual (EN/ES) university course: 8 hands-on labs building a Thread mesh IoT 
 
 ## Code style
 
-- ESP-IDF C code follows Espressif conventions (esp_err_t returns, ESP_LOG macros, menuconfig for config).
+- New C code targets Zephyr: `west` workflow, devicetree overlays, Kconfig fragments, `LOG_*` macros.
+- Legacy ESP-IDF C follows Espressif conventions (esp_err_t returns, ESP_LOG macros, menuconfig).
 - Python tools use standard library + minimal dependencies; keep them simple and self-contained.
-- Firmware examples target ESP32-C6 only.
+- Firmware examples target ESP32-C6 only (`esp32c6_devkitc/esp32c6/hpcore` in Zephyr).
 
 ## Agent delegation
 
