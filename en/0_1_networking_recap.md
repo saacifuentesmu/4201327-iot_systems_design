@@ -233,8 +233,8 @@ sequenceDiagram
 
 ### Phase 1: The Setup (Infrastructure)
 
-1. **Router:** Connect to the Instructor's Samsung Phone Hotspot.
-2. **Verify:** This phone is now your **Default Gateway** and **DHCP Server**.
+1. **Router:** One of you turns on a phone hotspot; everyone else in the group joins it.
+2. **Verify:** That phone is now your **Default Gateway** and **DHCP Server**.
 
 ### Phase 2: Discovery (Layer 3)
 

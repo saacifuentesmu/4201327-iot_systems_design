@@ -13,3 +13,7 @@ __pycache__/
 .vscode/
 ISO_IEC_30141_2024(en).pdf
 tools/grading/*
+Rolando Herrero - Practical Internet of Things Networking_ Understanding IoT Layered Architecture (2023, Springer).pdf
+
+# zephyr build output
+**/build/

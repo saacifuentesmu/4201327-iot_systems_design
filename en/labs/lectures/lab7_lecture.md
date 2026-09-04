@@ -177,7 +177,7 @@ Students will ask "why not just let the phone talk CoAP to the node directly —
 
 ### Part C: The platform decision — and why the broker is a config line
 
-Now the question the instructor gets every year: **"AWS? ThingsBoard? What's easiest?"** Lay it out as a table, then deliver the punchline:
+Now the question I get every year: **"AWS? ThingsBoard? What's easiest?"** Lay it out as a table, then deliver the punchline:
 
 | Option | Setup pain | Who runs it | What it gives you | Use it when |
 |---|---|---|---|---|

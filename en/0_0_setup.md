@@ -45,12 +45,15 @@ pip install --upgrade pip west
 ## 3. Workspace
 
 ```bash
-west init ~/zephyrproject
+west init ~/zephyrproject   # 10+ min, and prints nothing while it clones
 cd ~/zephyrproject
-west update            # slow: clones Zephyr + HALs
-west zephyr-export
+west update                 # slower still: clones the HALs
 west packages pip --install
+west zephyr-export
 ```
+
+> `west init` looks frozen for ten minutes or more. Let it finish — a Ctrl-C
+> here leaves a broken `.west/` that you have to `rmdir` before retrying.
 
 ## 4. ESP32-C6 blobs and compiler
 
@@ -89,6 +92,7 @@ Your deliverables live in your own fork.
 |---|---|
 | `west: command not found` | `source ~/zephyrproject/.venv/bin/activate` |
 | `Unable to find a valid toolchain` | Step 4. Check names with `west sdk list` |
+| `No module named 'jsonschema'` + a long traceback | `west packages pip --install`, then re-run `west zephyr-export` |
 | Build complains about espressif blobs | `west blobs fetch hal_espressif` |
 | No `/dev/ttyUSB*` or `/dev/ttyACM*` | Windows: re-run `usbipd attach`. Then `lsusb` |
 | `Permission denied: '/dev/ttyUSB0'` | Step 1's `usermod`, then open a new terminal |

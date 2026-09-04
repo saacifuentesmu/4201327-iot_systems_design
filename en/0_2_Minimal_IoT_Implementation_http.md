@@ -165,166 +165,255 @@ sequenceDiagram
     D-->>U: Update UI Toggle Color (Green)
 ```
 
-## ESP32-C6 Firmware Code Modifications
+## ESP32-C6 Firmware (Zephyr)
 
-The following code modifications must be made to `main/main.c` to implement the Sensing and Actuating capabilities for Lab 0.
+The firmware lives in [`firmware/lab0_http/`](../firmware/lab0_http/). It is a
+complete Zephyr application:
 
-### 0. Build System Setup
+```
+firmware/lab0_http/
+├── CMakeLists.txt
+├── Kconfig                              # Wi-Fi credentials
+├── prj.conf                             # which subsystems to build in
+├── sections-rom.ld                      # linker section for the HTTP resources
+├── boards/
+│   └── esp32c6_devkitc_hpcore.overlay   # the on-board RGB LED
+└── src/main.c
+```
 
-**`main/CMakeLists.txt`** — add `json` and `driver` to the requires list:
+### 0. A warning about the "on-board LED"
+
+The C6-DevKitC-1 does **not** have a plain GPIO LED. The single controllable LED is
+an **addressable WS2812** on GPIO8, which expects a precise pulse train rather than a
+level. Driving it with a GPIO write does nothing visible.
+
+So the LED is a devicetree node driven through the `led_strip` API, declared in
+`boards/esp32c6_devkitc_hpcore.overlay`:
+
+```dts
+&i2s_default {
+	group1 {
+		pinmux = <I2S_O_SD_GPIO8>;
+	};
+};
+
+i2s_led: &i2s {
+	status = "okay";
+	dmas = <&dma 3>;
+	dma-names = "tx";
+
+	led_strip: ws2812@0 {
+		compatible = "worldsemi,ws2812-i2s";
+		reg = <0>;
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_GREEN LED_COLOR_ID_RED LED_COLOR_ID_BLUE>;
+		reset-delay = <500>;
+	};
+};
+```
+
+This is the first place the Zephyr model shows itself: the *board* description says
+which pin the LED is on and how it is driven; `main.c` only asks for
+`DT_ALIAS(led_strip)` and sets a colour. Port the application to a board with a plain
+GPIO LED and only the overlay changes.
+
+### 1. Wi-Fi credentials
+
+Wi-Fi credentials are Kconfig symbols declared in the app's own `Kconfig`:
+
+```kconfig
+config LAB_WIFI_SSID
+	string "Wi-Fi SSID"
+	default "changeme"
+
+config LAB_WIFI_PSK
+	string "Wi-Fi password"
+	default "changeme"
+```
+
+Set them for a build without editing tracked files. Run this from the application
+directory — the `.` is the app, and it is `lab0_http/`, not `firmware/`:
+
+```bash
+source ~/zephyrproject/env.sh          # every new terminal needs this
+cd firmware/lab0_http                  # the directory holding CMakeLists.txt
+
+west build -p always -b esp32c6_devkitc/esp32c6/hpcore . \
+  -- -DCONFIG_LAB_WIFI_SSID='"YourNetwork"' -DCONFIG_LAB_WIFI_PSK='"YourPassword"'
+```
+
+> The quoting is deliberate: Kconfig string values need their own quotes *inside* the
+> shell quotes. `-DCONFIG_LAB_WIFI_SSID=YourNetwork` fails.
+
+> `west: command not found` means the first line was skipped. Install nothing — `west`
+> lives in the Zephyr venv, and `apt install west` is an unrelated package.
+
+The ESP32-C6 radio is **2.4 GHz only**. A 5 GHz-only SSID will never associate.
+
+### 2. Which subsystems get built
+
+`prj.conf` selects which subsystems are built in. Every capability in the ISO model
+maps to a line here:
+
+```conf
+CONFIG_WIFI=y            # Network Interface Capability
+CONFIG_HTTP_SERVER=y     # Application Interface Capability
+CONFIG_JSON_LIBRARY=y    # Data Capability
+CONFIG_LED_STRIP=y       # Actuating Capability
+CONFIG_NET_DHCPV4=y
+```
+
+### 3. Sensing capability — `GET /api/sensor`
+
+Zephyr's HTTP server is declarative. You register a resource against a service and
+supply a callback:
+
+```c
+static int sensor_handler(struct http_client_ctx *client, enum http_transaction_status status,
+			  const struct http_request_ctx *request_ctx,
+			  struct http_response_ctx *response_ctx, void *user_data)
+{
+	static uint8_t body[64];
+
+	if (status != HTTP_SERVER_REQUEST_DATA_FINAL) {
+		return 0;
+	}
+
+	uint32_t tenths = 200 + (sys_rand32_get() % 100);
+	int len = snprintf(body, sizeof(body), "{\"temperature\": %u.%u}",
+			   tenths / 10, tenths % 10);
+
+	response_ctx->status = HTTP_200_OK;
+	response_ctx->body = body;
+	response_ctx->body_len = len;
+	response_ctx->final_chunk = true;
+
+	return 0;
+}
+```
+
+The handler is called more than once per request. `HTTP_SERVER_REQUEST_DATA_FINAL`
+means the request is complete and a response is now expected — a GET with no body
+still gets an earlier callback, which is why the guard is there.
+
+### 4. Actuating capability — `POST /api/control`
+
+```c
+if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
+	struct control_cmd cmd = { 0 };
+	int ret = json_obj_parse(payload, cursor, control_cmd_descr,
+				 ARRAY_SIZE(control_cmd_descr), &cmd);
+
+	if (ret == BIT_MASK(ARRAY_SIZE(control_cmd_descr))) {
+		led_set(cmd.state);
+	}
+	...
+}
+```
+
+Two details worth stopping on:
+
+- **The body can arrive in pieces.** Even a 12-byte payload may be split across
+  callbacks, so `main.c` accumulates into a buffer and only parses at
+  `..._DATA_FINAL`. This is normal for streamed HTTP, and forgetting it produces a
+  parser that works on your desk and fails on a loaded network.
+- **`json_obj_parse` returns a bitmask**, not 0 on success — one bit per field it
+  filled. Comparing against `BIT_MASK(field_count)` is how you check that every
+  expected field was present.
+
+### 5. The linker section
+
+Each `HTTP_SERVICE_DEFINE` needs a matching iterable ROM section or the resource list
+does not link:
+
+```
+/* sections-rom.ld */
+ITERABLE_SECTION_ROM(http_resource_desc_iot_service, Z_LINK_ITERABLE_SUBALIGN)
+```
+
 ```cmake
-set(requires esp-tls nvs_flash esp_netif esp_http_server json driver)
+zephyr_linker_sources(SECTIONS sections-rom.ld)
+zephyr_linker_section(NAME http_resource_desc_iot_service
+  KVMA RAM_REGION GROUP RODATA_REGION)
 ```
 
-### 1. Required Includes & Definitions
-Add these to the top of the file, below the existing `#include` statements.
+The section name must be `http_resource_desc_<service name>`. Rename the service in
+`HTTP_SERVICE_DEFINE` and you must rename the section too, or you get
+`undefined reference to _http_resource_desc_..._list_start` at link time.
 
-```c
-#include "cJSON.h"
-#include "driver/gpio.h"
-#include "esp_random.h"
-
-// Define the onboard LED pin for the ESP32-C6
-#define BLINK_GPIO 8
-
-```
-
-### 2. Sensing and Actuating Handlers
-
-Add these functions directly above the `start_webserver(void)` function.
-
-```c
-/* ---------------------------------------------------
- * SENSING CAPABILITY (GET /api/sensor)
- * --------------------------------------------------- */
-static esp_err_t sensor_get_handler(httpd_req_t *req)
-{
-    // Generate a dummy temperature between 20.0 and 29.9
-    float temp = 20.0 + (esp_random() % 100) / 10.0;
-    
-    // Format as JSON
-    char buffer[100];
-    snprintf(buffer, sizeof(buffer), "{\"temperature\": %.1f}", temp);
-    
-    // Send Response
-    httpd_resp_set_type(req, "application/json");
-    httpd_resp_send(req, buffer, HTTPD_RESP_USE_STRLEN);
-    
-    ESP_LOGI(TAG, "Telemetry requested. Sent: %s", buffer);
-    return ESP_OK;
-}
-
-static const httpd_uri_t api_sensor = {
-    .uri       = "/api/sensor",
-    .method    = HTTP_GET,
-    .handler   = sensor_get_handler,
-    .user_ctx  = NULL
-};
-
-/* ---------------------------------------------------
- * ACTUATING CAPABILITY (POST /api/control)
- * --------------------------------------------------- */
-static esp_err_t control_post_handler(httpd_req_t *req)
-{
-    char buf[100];
-    int ret, remaining = req->content_len;
-
-    // Read the incoming payload
-    if (remaining >= sizeof(buf)) {
-        httpd_resp_send_500(req);
-        return ESP_FAIL;
-    }
-    if ((ret = httpd_req_recv(req, buf, remaining)) <= 0) {
-        return ESP_FAIL;
-    }
-    buf[ret] = '\0'; // Null-terminate
-
-    // Parse the JSON payload: {"state": 1} or {"state": 0}
-    cJSON *root = cJSON_Parse(buf);
-    int state = 0;
-    if (root != NULL) {
-        cJSON *state_item = cJSON_GetObjectItem(root, "state");
-        if (state_item != NULL && cJSON_IsNumber(state_item)) {
-            state = state_item->valueint;
-            
-            // Actuate the hardware
-            gpio_set_level(BLINK_GPIO, state);
-            ESP_LOGI(TAG, "Actuating Command Received. LED State: %d", state);
-        }
-        cJSON_Delete(root);
-    }
-
-    // Send Acknowledgment
-    httpd_resp_set_type(req, "application/json");
-    httpd_resp_send(req, "{\"status\": \"ok\"}", HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
-static const httpd_uri_t api_control = {
-    .uri       = "/api/control",
-    .method    = HTTP_POST,
-    .handler   = control_post_handler,
-    .user_ctx  = NULL
-};
-
-```
-
-### 3. Registering the Handlers
-
-Inside the `start_webserver(void)` function, comment out the default URI registrations and register the two new endpoints:
-
-```c
-    ESP_LOGI(TAG, "Registering URI handlers");
-    
-    // Register custom IoT endpoints
-    httpd_register_uri_handler(server, &api_sensor);
-    httpd_register_uri_handler(server, &api_control);
-
-```
-
-### 4. Hardware Initialization
-
-Inside the `app_main(void)` function, add the GPIO initialization immediately before the `example_connect()` call so the LED starts in a known state:
-
-```c
-    // Initialize Actuator Hardware (LED)
-    gpio_reset_pin(BLINK_GPIO);
-    gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(BLINK_GPIO, 0); // Start OFF
-
-```
+---
 
 ## System Integration & Verification
 
-Now that the ESP32-C6 is running the modified firmware and connected to your local network, we will link it to the Application Domain (the Python dashboard) to complete the IoT loop.
+### Step 1: Build and flash
 
-
-
-### Step 1: Link the IP Address
-1. Look at the ESP-IDF monitor terminal. After the Wi-Fi connection is established, the ESP32-C6 will print its IP address. 
-   *(Example: `I (2450) simple_server: IPv4 address: 192.168.1.100`)*
-2. Open your `dashboard_http.py` file.
-3. Locate the network configuration section at the top of the script and replace the default IP with your board's actual IP address:
-```python
-   # --- Network Configuration ---
-   ESP32_IP = "192.168.1.100"  # <-- Update this!
-
-```
-
-### Step 2: Launch the Application Domain
-
-1. Open a new terminal on your computer (do not close the ESP-IDF monitor, so you can watch the incoming requests).
-2. Run the dashboard script:
 ```bash
-python dashboard_http.py
+source ~/zephyrproject/env.sh
+cd firmware/lab0_http
 
+west build -p always -b esp32c6_devkitc/esp32c6/hpcore . \
+  -- -DCONFIG_LAB_WIFI_SSID='"YourNetwork"' -DCONFIG_LAB_WIFI_PSK='"YourPassword"'
+west flash
 ```
 
+### Step 2: Read the node's IP address
 
-3. Open a web browser and navigate to `http://localhost:5000`.
+Open the console **on the UART port** (`/dev/ttyUSB0`) and reset the board:
 
-### Step 3: Verify Capabilities
+```bash
+west espressif monitor -p /dev/ttyUSB0
+```
 
-* **Sensing Capability:** Look at the "Live Telemetry" graph. You should see a new temperature data point appear every 1.5 seconds. The status text should read "Connected. Live data stream active." in green.
-* **Actuating Capability:** Click the "Turn ON" and "Turn OFF" buttons in the dashboard. Look at your ESP32-C6 board—the onboard LED (GPIO 8) should physically turn on and off. Check your ESP-IDF monitor to see the incoming `POST` requests logged in real-time.
+```
+[00:00:03.412] <inf> lab0_http: Connecting to "YourNetwork"...
+[00:00:05.220] <inf> lab0_http: Associated with "YourNetwork"
+[00:00:06.918] <inf> lab0_http: IPv4 address: 192.168.1.100
+[00:00:06.925] <inf> lab0_http: HTTP server listening on port 80
+```
 
+Confirm the node answers before involving the dashboard:
+
+```bash
+curl http://192.168.1.100/api/sensor
+# {"temperature": 24.7}
+
+curl -X POST http://192.168.1.100/api/control \
+     -H 'Content-Type: application/json' -d '{"state": 1}'
+# {"status": "ok"}
+```
+
+The LED should turn green on the second command. If `curl` works and the dashboard
+does not, the problem is in the dashboard's `ESP32_IP`, not the firmware.
+
+### Step 3: Launch the Application Domain
+
+Put the address from step 2 into `tools/dashboard_http.py`:
+
+```python
+# --- Network Configuration ---
+ESP32_IP = "192.168.1.100"  # <-- Update this!
+```
+
+```bash
+python3 tools/dashboard_http.py
+```
+
+Open `http://localhost:5000`.
+
+### Step 4: Verify both capabilities
+
+- **Sensing:** the "Live Telemetry" graph gains a point every 1.5 s and the status
+  reads "Connected. Live data stream active."
+- **Actuating:** "Turn ON" / "Turn OFF" changes the on-board RGB LED, and each POST
+  is logged on the serial console.
+
+### When something breaks
+
+| Symptom | Cause |
+|---|---|
+| `Wi-Fi association failed` | Wrong PSK, or a 5 GHz-only SSID — the C6 is 2.4 GHz only |
+| Boots, no `IPv4 address` line | Associated but no DHCP lease; check the AP's DHCP pool |
+| Console silent, board flashes fine | You are on `/dev/ttyACM0`; the console is on the UART port |
+| `curl` times out | Node and workstation are on different subnets, or AP client isolation is on |
+| LED never lights | Overlay missing from the build — confirm `boards/` sits next to `CMakeLists.txt` |
+| `undefined reference to _http_resource_desc_*` | Linker section name does not match the service name |

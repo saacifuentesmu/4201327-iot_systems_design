@@ -292,252 +292,253 @@ sequenceDiagram
 
 ### Overview of Changes
 
-The firmware changes from Lab 0 to Lab 1 reflect the architectural shift:
+The firmware changes from the HTTP lab to this one reflect the architectural shift:
 
-| Component | HTTP (Lab 0) | MQTT (Lab 1) |
+| Component | HTTP | MQTT |
 |---|---|---|
-| **ESP-IDF example base** | `protocols/http_server/simple` | `protocols/mqtt/tcp` |
-| **Main include** | `esp_http_server.h` | `mqtt_client.h` |
-| **Server/Client** | `httpd_start()` — starts a server | `esp_mqtt_client_start()` — connects as client |
-| **Sensing** | Handler waits for GET request | Task publishes on a timer |
-| **Actuating** | Handler waits for POST request | Callback fires on incoming message |
-| **CMake requires** | `esp_http_server json driver` | `mqtt json driver` |
+| **Project** | `firmware/lab0_http/` | `firmware/lab0_mqtt/` |
+| **Zephyr subsystem** | `CONFIG_HTTP_SERVER` | `CONFIG_MQTT_LIB` |
+| **Main include** | `zephyr/net/http/service.h` | `zephyr/net/mqtt.h` |
+| **Server/Client** | `http_server_start()` — serves | `mqtt_connect()` — connects outward |
+| **Sensing** | Handler waits for a GET | Loop publishes on a timer |
+| **Actuating** | Handler waits for a POST | `MQTT_EVT_PUBLISH` callback fires |
+| **Needs a poll loop** | No — the subsystem owns a thread | **Yes** — you drive the client |
 
-### 0. Project Setup
+That last row is the biggest practical difference. Zephyr's HTTP server runs itself
+once started; its MQTT client does not. Your code owns the socket loop.
 
-Copy the MQTT TCP example from ESP-IDF to your workspace:
+### 0. Project layout
+
+```
+firmware/lab0_mqtt/
+├── CMakeLists.txt
+├── Kconfig                              # Wi-Fi credentials + broker address
+├── prj.conf
+├── boards/
+│   └── esp32c6_devkitc_hpcore.overlay   # the on-board RGB LED
+└── src/main.c
+```
+
+The LED overlay is identical to the HTTP lab — and carries the same warning: the
+C6-DevKitC-1's on-board LED is an **addressable WS2812 on GPIO8**, not a plain GPIO,
+so it is driven through the `led_strip` API. A GPIO write does nothing visible.
+
+### 1. Point the node at your broker
+
+The broker address is a Kconfig symbol, because the node must reach *your workstation*
+over the Wi-Fi network:
 
 ```bash
-cp -r $IDF_PATH/examples/protocols/mqtt/tcp mqtt_simple
-cd mqtt_simple
+source ~/zephyrproject/env.sh          # every new terminal needs this
+cd firmware/lab0_mqtt                  # the directory holding CMakeLists.txt
+
+west build -p always -b esp32c6_devkitc/esp32c6/hpcore . \
+  -- -DCONFIG_LAB_WIFI_SSID='"YourNetwork"' \
+     -DCONFIG_LAB_WIFI_PSK='"YourPassword"' \
+     -DCONFIG_LAB_BROKER_ADDR='"192.168.1.50"'
 ```
 
-Open `menuconfig` and configure:
-1. **Wi-Fi credentials:** `Example Connection Configuration` → set SSID and Password
-2. **Broker URL:** `Example Configuration` → set `Broker URL` to `mqtt://YOUR_PC_IP:1883`
+> `west: command not found` means the first line was skipped. Install nothing — `west`
+> lives in the Zephyr venv, and `apt install west` is an unrelated package.
 
-> **Important:** Use your computer's IP address on the Wi-Fi network (e.g., `mqtt://192.168.1.50:1883`), not `localhost` — the ESP32 needs to reach your computer over the network.
+> `192.168.1.50` must be your **PC's** address on the Wi-Fi network — the same one
+> Mosquitto is bound to. `localhost` would mean the ESP32 itself. Find it with
+> `ip addr` (Linux/macOS) or `ipconfig` (Windows).
 
-### 1. Build System Setup
-
-**`main/CMakeLists.txt`** — add `json` and `driver` to the requires list:
-```cmake
-idf_component_register(SRCS "app_main.c"
-                    PRIV_REQUIRES mqtt nvs_flash esp_netif json driver
-                    INCLUDE_DIRS ".")
-```
-
-### 2. Required Includes & Definitions
-
-Replace the contents of `main/app_main.c` with the following. Add these at the top:
+### 2. Sensing capability — publishing telemetry
 
 ```c
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
-#include <inttypes.h>
-#include "esp_system.h"
-#include "nvs_flash.h"
-#include "esp_event.h"
-#include "esp_netif.h"
-#include "protocol_examples_common.h"
-#include "esp_log.h"
-#include "mqtt_client.h"
-
-#include "cJSON.h"
-#include "driver/gpio.h"
-#include "esp_random.h"
-
-// Define the onboard LED pin for the ESP32-C6
-#define BLINK_GPIO 8
-
-// MQTT Topics
-#define TOPIC_SENSOR  "iot/sensor"
-#define TOPIC_CONTROL "iot/control"
-
-static const char *TAG = "mqtt_iot";
-static esp_mqtt_client_handle_t mqtt_client = NULL;
-```
-
-### 3. Actuating Capability — MQTT Message Handler
-
-In the HTTP version, we had an `httpd_req_t` handler that parsed a POST body. In MQTT, we receive messages through an **event callback**. Add this function:
-
-```c
-static void handle_control_message(const char *data, int data_len)
+static int publish_sensor(struct mqtt_client *c)
 {
-    // Null-terminate the incoming data for safe parsing
-    char buf[64];
-    int len = data_len < (int)sizeof(buf) - 1 ? data_len : (int)sizeof(buf) - 1;
-    memcpy(buf, data, len);
-    buf[len] = '\0';
+	uint8_t payload[64];
+	struct mqtt_publish_param param = { 0 };
+	uint32_t tenths = 200 + (sys_rand32_get() % 100);
+	int len = snprintf(payload, sizeof(payload), "{\"temperature\": %u.%u}",
+			   tenths / 10, tenths % 10);
 
-    cJSON *root = cJSON_Parse(buf);
-    if (root != NULL) {
-        cJSON *state_item = cJSON_GetObjectItem(root, "state");
-        if (state_item != NULL && cJSON_IsNumber(state_item)) {
-            int state = state_item->valueint;
-            gpio_set_level(BLINK_GPIO, state);
-            ESP_LOGI(TAG, "Actuating Command Received. LED State: %d", state);
-        }
-        cJSON_Delete(root);
-    }
+	param.message.topic.topic.utf8 = (uint8_t *)TOPIC_SENSOR;
+	param.message.topic.topic.size = strlen(TOPIC_SENSOR);
+	param.message.topic.qos = MQTT_QOS_0_AT_MOST_ONCE;
+	param.message.payload.data = payload;
+	param.message.payload.len = len;
+	param.message_id = sys_rand16_get();
+
+	return mqtt_publish(c, &param);
 }
 ```
 
-### 4. MQTT Event Handler
+Telemetry goes out at **QoS 0**: a dropped reading is replaced two seconds later, and
+paying for acknowledgements on every sample is waste. Compare with the control path
+below, where a lost message means the LED disobeys.
 
-This replaces the HTTP URI registration model. Instead of registering separate handler functions for each endpoint, we handle all MQTT events in a single callback:
+### 3. Actuating capability — receiving commands
+
+Subscription happens once, from inside the `CONNACK` handler — you cannot subscribe
+before the broker has accepted the connection:
 
 ```c
-static void mqtt_event_handler(void *handler_args, esp_event_base_t base,
-                                int32_t event_id, void *event_data)
-{
-    esp_mqtt_event_handle_t event = event_data;
-    esp_mqtt_client_handle_t client = event->client;
+case MQTT_EVT_CONNACK:
+	if (evt->result != 0) {
+		LOG_ERR("MQTT connect failed (%d)", evt->result);
+		break;
+	}
+	connected = true;
+	subscribe_control(c);
+	break;
 
-    switch ((esp_mqtt_event_id_t)event_id) {
-    case MQTT_EVENT_CONNECTED:
-        ESP_LOGI(TAG, "Connected to MQTT broker");
-        // Subscribe to the control topic (like registering a POST handler in HTTP)
-        esp_mqtt_client_subscribe(client, TOPIC_CONTROL, 1);
-        ESP_LOGI(TAG, "Subscribed to: %s", TOPIC_CONTROL);
-        break;
+case MQTT_EVT_PUBLISH:
+	handle_control_payload(c, &evt->param.publish);
+	break;
+```
 
-    case MQTT_EVENT_DATA:
-        ESP_LOGI(TAG, "Received message on: %.*s", event->topic_len, event->topic);
-        // Route message to the appropriate handler (like URI dispatching in HTTP)
-        if (strncmp(event->topic, TOPIC_CONTROL, event->topic_len) == 0) {
-            handle_control_message(event->data, event->data_len);
-        }
-        break;
+Incoming payloads need two things that catch people out:
 
-    case MQTT_EVENT_DISCONNECTED:
-        ESP_LOGW(TAG, "Disconnected from MQTT broker");
-        break;
+```c
+ret = mqtt_read_publish_payload_blocking(c, payload, len);
+```
 
-    case MQTT_EVENT_ERROR:
-        ESP_LOGE(TAG, "MQTT error occurred");
-        break;
+- **The payload is not in the event.** `MQTT_EVT_PUBLISH` gives you the topic and a
+  length; the bytes are still in the socket and must be read explicitly.
+- **QoS 1 must be acknowledged.** The dashboard publishes commands at QoS 1, so the
+  node owes the broker a PUBACK. Skip it and the broker redelivers the same command
+  forever:
 
-    default:
-        break;
-    }
+```c
+if (pub->message.topic.qos == MQTT_QOS_1_AT_LEAST_ONCE) {
+	struct mqtt_puback_param ack = { .message_id = pub->message_id };
+
+	mqtt_publish_qos1_ack(c, &ack);
 }
 ```
 
-### 5. Sensing Capability — Publish Task
-
-In the HTTP version, sensor data was only sent when the dashboard requested it (pull model). In MQTT, we use a FreeRTOS task that **pushes** data at a fixed interval:
+### 4. The loop you now own
 
 ```c
-static void sensor_publish_task(void *pvParameters)
-{
-    while (1) {
-        if (mqtt_client != NULL) {
-            // Generate a dummy temperature between 20.0 and 29.9
-            float temp = 20.0f + (esp_random() % 100) / 10.0f;
+while (1) {
+	int timeout = mqtt_keepalive_time_left(&client);
 
-            char buffer[64];
-            snprintf(buffer, sizeof(buffer), "{\"temperature\": %.1f}", temp);
+	rc = zsock_poll(fds, 1, MIN(timeout, 1000));
 
-            esp_mqtt_client_publish(mqtt_client, TOPIC_SENSOR, buffer, 0, 0, 0);
-            ESP_LOGI(TAG, "Published: %s -> %s", TOPIC_SENSOR, buffer);
-        }
-        vTaskDelay(pdMS_TO_TICKS(2000)); // Publish every 2 seconds
-    }
+	if (rc > 0 && (fds[0].revents & ZSOCK_POLLIN)) {
+		mqtt_input(&client);        /* process incoming packets  */
+	}
+
+	mqtt_live(&client);                 /* send PINGREQ when due     */
+
+	if (connected && k_uptime_get() >= next_publish) {
+		publish_sensor(&client);
+		next_publish = k_uptime_get() + 2000;
+	}
 }
 ```
 
-### 6. Main Application
+Three jobs share one loop: `mqtt_input()` handles arriving packets, `mqtt_live()`
+sends the keepalive ping, and the timer check publishes telemetry. Drop `mqtt_live()`
+and the broker disconnects you after the keepalive interval with no obvious error —
+the node simply stops appearing.
 
-Replace `app_main` entirely:
-
-```c
-void app_main(void)
-{
-    ESP_LOGI(TAG, "[APP] Startup..");
-    ESP_LOGI(TAG, "[APP] Free memory: %" PRIu32 " bytes", esp_get_free_heap_size());
-
-    ESP_ERROR_CHECK(nvs_flash_init());
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-    // Initialize Actuator Hardware (LED) — same as Lab 0
-    gpio_reset_pin(BLINK_GPIO);
-    gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(BLINK_GPIO, 0);
-
-    // Connect to Wi-Fi — same as Lab 0
-    ESP_ERROR_CHECK(example_connect());
-
-    // Configure and start MQTT client
-    esp_mqtt_client_config_t mqtt_cfg = {
-        .broker.address.uri = CONFIG_BROKER_URL,
-    };
-    mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
-    esp_mqtt_client_register_event(mqtt_client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
-    esp_mqtt_client_start(mqtt_client);
-
-    // Start the sensor publishing task
-    xTaskCreate(sensor_publish_task, "sensor_pub", 4096, NULL, 5, NULL);
-}
-```
+The outer loop reconnects: if the broker restarts or Wi-Fi drops, the inner loop
+breaks, and after five seconds the node dials again.
 
 ---
 
 ## System Integration & Verification
 
-### Step 1: Start the Broker
+### Step 1: Confirm the broker accepts network connections
 
-Ensure Mosquitto is running on your workstation:
-```bash
-systemctl status mosquitto
-```
-
-### Step 2: Configure and Flash the ESP32
-
-1. Set the broker URL in `menuconfig`:
-   ```bash
-   idf.py menuconfig
-   # Example Configuration → Broker URL: mqtt://YOUR_PC_IP:1883
-   # Example Connection Configuration → Wi-Fi SSID and Password
-   ```
-2. Build and flash:
-   ```bash
-   idf.py build flash monitor
-   ```
-3. You should see output like:
-   ```
-   I (3456) mqtt_iot: Connected to MQTT broker
-   I (3456) mqtt_iot: Subscribed to: iot/control
-   I (5456) mqtt_iot: Published: iot/sensor -> {"temperature": 24.3}
-   ```
-
-### Step 3: Verify with Command-Line Tools (Optional)
-
-Before launching the dashboard, you can verify traffic with `mosquitto_sub`:
-```bash
-# Watch sensor data flowing from the ESP32
-mosquitto_sub -h localhost -t "iot/sensor"
-
-# Send a control command manually
-mosquitto_pub -h localhost -t "iot/control" -m '{"state": 1}'
-```
-
-### Step 4: Launch the Dashboard
+Before flashing anything, prove Mosquitto is reachable **from the network**, not just
+from localhost. One command settles it:
 
 ```bash
-python tools/dashboard_mqtt.py
+ss -lnt | grep 1883
 ```
 
-Open `http://localhost:5000` in your browser.
+```
+LISTEN 0 100 0.0.0.0:1883 0.0.0.0:*      # reachable from the board
+LISTEN 0 100 127.0.0.1:1883 0.0.0.0:*    # localhost only - the board cannot connect
+```
 
-### Step 5: Verify Capabilities
+If you see `127.0.0.1`, the `listener 1883` line from Step 0 is not in effect. The
+usual cause is ordering: installing the package starts the service immediately, so a
+restart that happens *before* `lab.conf` is written leaves the old localhost-only
+config running. Restart again and re-check:
 
-* **Sensing Capability:** The telemetry graph should update automatically as the ESP32 publishes data. Unlike Lab 0, the dashboard is **not polling** — it receives data instantly when the ESP32 publishes.
-* **Actuating Capability:** Click "Turn ON" / "Turn OFF". The dashboard publishes to `iot/control`, the broker delivers it to the ESP32, and the LED changes state.
+```bash
+sudo systemctl restart mosquitto
+```
+
+This distinction matters because a localhost-only broker passes the Step 0 test
+perfectly — `mosquitto_sub -h localhost` works fine — while refusing every connection
+from the board. Then confirm from the address the board will actually use:
+
+```bash
+mosquitto_sub -h 192.168.1.50 -t "iot/#" -v
+```
+
+### Step 2: Build and flash
+
+```bash
+source ~/zephyrproject/env.sh
+cd firmware/lab0_mqtt
+
+west build -p always -b esp32c6_devkitc/esp32c6/hpcore . \
+  -- -DCONFIG_LAB_WIFI_SSID='"YourNetwork"' \
+     -DCONFIG_LAB_WIFI_PSK='"YourPassword"' \
+     -DCONFIG_LAB_BROKER_ADDR='"192.168.1.50"'
+west flash
+west espressif monitor -p /dev/ttyUSB0
+```
+
+```
+[00:00:03.412] <inf> lab0_mqtt: Connecting to "YourNetwork"...
+[00:00:05.220] <inf> lab0_mqtt: Associated with "YourNetwork"
+[00:00:06.918] <inf> lab0_mqtt: IPv4 address: 192.168.1.100
+[00:00:06.930] <inf> lab0_mqtt: Connecting to broker 192.168.1.50:1883
+[00:00:07.104] <inf> lab0_mqtt: Connected to broker
+[00:00:07.210] <inf> lab0_mqtt: Subscribed to iot/control
+[00:00:09.212] <inf> lab0_mqtt: Publishing to iot/sensor: {"temperature": 24.7}
+```
+
+The `mosquitto_sub` window from Step 1 should now be printing those same readings.
+**Verify this before starting the dashboard** — it separates a firmware problem from a
+dashboard problem.
+
+Drive the LED by hand from the other direction:
+
+```bash
+mosquitto_pub -h 192.168.1.50 -t "iot/control" -q 1 -m '{"state": 1}'
+```
+
+### Step 3: Launch the Application Domain
+
+```bash
+python3 tools/dashboard_mqtt.py
+```
+
+Note what you did **not** have to do: there is no `ESP32_IP` to edit. The dashboard
+only needs the broker. Adding a second node changes nothing on the dashboard side —
+that is the coupling difference the Discussion section asks about.
+
+Open `http://localhost:5000`.
+
+### Step 4: Verify both capabilities
+
+* **Sensing:** the telemetry graph updates as the node publishes. The dashboard is
+  **not polling** — data arrives when it is produced.
+* **Actuating:** "Turn ON" / "Turn OFF" publishes to `iot/control`, the broker
+  delivers it, and the RGB LED changes.
+
+### When something breaks
+
+| Symptom | Cause |
+|---|---|
+| `Wi-Fi association failed` | Wrong PSK, or a 5 GHz-only SSID — the C6 is 2.4 GHz only |
+| `mqtt_connect failed (-111)` | Connection refused: broker not listening on the LAN, or firewall blocks 1883 |
+| `mqtt_connect failed (-113)` | No route to host — wrong `LAB_BROKER_ADDR`, or different subnets |
+| Connects, then drops every ~60 s | `mqtt_live()` not being called often enough in the loop |
+| Same command delivered repeatedly | Missing QoS 1 PUBACK |
+| Publishes fine, dashboard shows nothing | Topic mismatch — the dashboard subscribes to `iot/sensor` exactly |
+| Console silent, board flashes fine | You are on `/dev/ttyACM0`; the console is on the UART port |
 
 ---
 
