@@ -311,13 +311,33 @@ once started; its MQTT client does not. Your code owns the socket loop.
 
 ```
 firmware/lab0_mqtt/
-├── CMakeLists.txt
-├── Kconfig                              # Wi-Fi credentials + broker address
-├── prj.conf
+├── CMakeLists.txt                       # given
+├── Kconfig                              # TASK 2 - broker address
+├── prj.conf                             # TASK 1
 ├── boards/
-│   └── esp32c6_devkitc_hpcore.overlay   # the on-board RGB LED
-└── src/main.c
+│   └── esp32c6_devkitc_hpcore.overlay   # given - the on-board RGB LED
+└── src/main.c                           # TASKS 3, 4, 5
 ```
+
+| | What you write | Capability |
+|---|---|---|
+| **TASK 1** | Four `CONFIG_` symbols in `prj.conf` | all four |
+| **TASK 2** | `LAB_BROKER_ADDR` / `LAB_BROKER_PORT` in `Kconfig` | Network Interface |
+| **TASK 3** | `led_set()` — drive the WS2812 | Actuating |
+| **TASK 4** | `handle_control_payload()` — read, parse, actuate, **PUBACK** | Actuating + Data |
+| **TASK 5** | `publish_sensor()` — fill the publish parameters | Sensing + Data |
+
+Each spot is marked with a `TASK n` comment in the file. The Wi-Fi association code
+and the MQTT poll loop are given — the loop is subtle and it is not what this lab is
+teaching.
+
+Three of these you have already solved once in the HTTP lab. **The interesting ones
+are TASK 4 and TASK 5**, because they are where the publish/subscribe model differs
+from request/response: nobody asks you for a reading, and nobody automatically
+confirms a command was received.
+
+Work in order — TASK 1 and TASK 2 both cause build failures until they are done, and
+`main.c` already refers to `CONFIG_LAB_BROKER_ADDR`.
 
 The LED overlay is identical to the HTTP lab — and carries the same warning: the
 C6-DevKitC-1's on-board LED is an **addressable WS2812 on GPIO8**, not a plain GPIO,
@@ -345,43 +365,35 @@ west build -p always -b esp32c6_devkitc/esp32c6/hpcore . \
 > Mosquitto is bound to. `localhost` would mean the ESP32 itself. Find it with
 > `ip addr` (Linux/macOS) or `ipconfig` (Windows).
 
-### 2. Sensing capability — publishing telemetry
+### 2. Sensing capability — publishing telemetry  ·  TASK 5
 
-```c
-static int publish_sensor(struct mqtt_client *c)
-{
-	uint8_t payload[64];
-	struct mqtt_publish_param param = { 0 };
-	uint32_t tenths = 200 + (sys_rand32_get() % 100);
-	int len = snprintf(payload, sizeof(payload), "{\"temperature\": %u.%u}",
-			   tenths / 10, tenths % 10);
+Nobody asks the node for a reading. It publishes on its own schedule, which means
+there is no request to respond to — only a message to describe. You describe it by
+filling a `struct mqtt_publish_param`:
 
-	param.message.topic.topic.utf8 = (uint8_t *)TOPIC_SENSOR;
-	param.message.topic.topic.size = strlen(TOPIC_SENSOR);
-	param.message.topic.qos = MQTT_QOS_0_AT_MOST_ONCE;
-	param.message.payload.data = payload;
-	param.message.payload.len = len;
-	param.message_id = sys_rand16_get();
+| Field | Holds |
+|---|---|
+| `message.topic.topic.utf8` / `.size` | the topic string and its length |
+| `message.topic.qos` | the delivery guarantee — your choice, see below |
+| `message.payload.data` / `.len` | the JSON bytes and their length |
+| `message_id` | any unique id; `sys_rand16_get()` is fine |
 
-	return mqtt_publish(c, &param);
-}
-```
+then hand it to `mqtt_publish()`. The JSON itself is built for you in the stub, and
+uses the same `temperature` field as the HTTP lab.
 
-Telemetry goes out at **QoS 0**: a dropped reading is replaced two seconds later, and
-paying for acknowledgements on every sample is waste. Compare with the control path
-below, where a lost message means the LED disobeys.
+**Choose the QoS deliberately, and defend it in your DDR.** A telemetry sample is
+replaced two seconds later, so losing one costs nothing and acknowledging every one
+costs bandwidth and airtime on a battery-powered node. A control command gets no
+second chance. The two paths in this lab should not use the same QoS, and the
+reasoning — not the value — is what you are being assessed on.
 
-### 3. Actuating capability — receiving commands
+### 3. Actuating capability — receiving commands  ·  TASK 4
 
 Subscription happens once, from inside the `CONNACK` handler — you cannot subscribe
-before the broker has accepted the connection:
+before the broker has accepted the connection. That part is written for you:
 
 ```c
 case MQTT_EVT_CONNACK:
-	if (evt->result != 0) {
-		LOG_ERR("MQTT connect failed (%d)", evt->result);
-		break;
-	}
 	connected = true;
 	subscribe_control(c);
 	break;
@@ -391,25 +403,26 @@ case MQTT_EVT_PUBLISH:
 	break;
 ```
 
-Incoming payloads need two things that catch people out:
+What you write is `handle_control_payload()`, and it has two traps that have nothing
+to do with HTTP:
 
-```c
-ret = mqtt_read_publish_payload_blocking(c, payload, len);
-```
+**The payload is not in the event.** `MQTT_EVT_PUBLISH` hands you the topic and a
+length, but the bytes are still sitting in the socket. You must pull them out
+yourself with `mqtt_read_publish_payload_blocking()` before there is anything to
+parse. Reading `evt->param.publish.message.payload` directly gets you a length and no
+data.
 
-- **The payload is not in the event.** `MQTT_EVT_PUBLISH` gives you the topic and a
-  length; the bytes are still in the socket and must be read explicitly.
-- **QoS 1 must be acknowledged.** The dashboard publishes commands at QoS 1, so the
-  node owes the broker a PUBACK. Skip it and the broker redelivers the same command
-  forever:
+**QoS 1 must be acknowledged.** The dashboard publishes commands at QoS 1, so the
+broker holds the message until the node confirms receipt. That confirmation is a
+PUBACK, sent with `mqtt_publish_qos1_ack()` and the message id from the incoming
+publish.
 
-```c
-if (pub->message.topic.qos == MQTT_QOS_1_AT_LEAST_ONCE) {
-	struct mqtt_puback_param ack = { .message_id = pub->message_id };
+Skip the PUBACK and the symptom is instructive rather than obvious: the command works
+*once*, and then the broker redelivers the same message indefinitely, because from
+its point of view the node never received it. If your LED starts toggling on its own,
+this is why.
 
-	mqtt_publish_qos1_ack(c, &ack);
-}
-```
+Parsing is the same `json_obj_parse()` bitmask check you already did in the HTTP lab.
 
 ### 4. The loop you now own
 

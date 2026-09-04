@@ -167,19 +167,36 @@ sequenceDiagram
 
 ## ESP32-C6 Firmware (Zephyr)
 
-The firmware lives in [`firmware/lab0_http/`](../firmware/lab0_http/). It is a
-complete Zephyr application:
+The firmware lives in [`firmware/lab0_http/`](../firmware/lab0_http/). The Zephyr
+application is scaffolded for you; **four pieces are missing and you write them**:
 
 ```
 firmware/lab0_http/
-├── CMakeLists.txt
-├── Kconfig                              # Wi-Fi credentials
-├── prj.conf                             # which subsystems to build in
-├── sections-rom.ld                      # linker section for the HTTP resources
+├── CMakeLists.txt                       # given
+├── Kconfig                              # given - Wi-Fi credentials
+├── prj.conf                             # TASK 1
+├── sections-rom.ld                      # given - linker section for the resources
 ├── boards/
-│   └── esp32c6_devkitc_hpcore.overlay   # the on-board RGB LED
-└── src/main.c
+│   └── esp32c6_devkitc_hpcore.overlay   # given - the on-board RGB LED
+└── src/main.c                           # TASKS 2, 3, 4
 ```
+
+| | What you write | Capability |
+|---|---|---|
+| **TASK 1** | Four `CONFIG_` symbols in `prj.conf` | all four |
+| **TASK 2** | `led_set()` — drive the WS2812 | Actuating |
+| **TASK 3** | `sensor_handler()` — build the reading and respond | Sensing + Data |
+| **TASK 4** | `control_handler()` — parse the command, actuate, reply | Actuating + Data |
+
+Each spot is marked with a `TASK n` comment in the file, stating what is expected and
+how to check it. The build system, the Wi-Fi association code and the HTTP resource
+registration are done for you — they are plumbing, not architecture.
+
+Work in order. **TASK 1 first**: until those symbols are set the build fails with
+`'CONFIG_HTTP_SERVER_MAX_CLIENTS' undeclared`, because the subsystem is not compiled
+in. Once TASK 1 is right, the project builds and runs — it simply does nothing yet,
+which is your baseline. A `'control_cmd_descr' defined but not used` warning is
+expected until TASK 4 is done.
 
 ### 0. A warning about the "on-board LED"
 
@@ -263,63 +280,81 @@ CONFIG_LED_STRIP=y       # Actuating Capability
 CONFIG_NET_DHCPV4=y
 ```
 
-### 3. Sensing capability — `GET /api/sensor`
+### 3. Sensing capability — `GET /api/sensor`  ·  TASK 3
 
-Zephyr's HTTP server is declarative. You register a resource against a service and
-supply a callback:
+Zephyr's HTTP server is declarative: a resource is bound to a service at build time,
+and your callback is invoked when a request arrives. The registration is already
+written for you:
 
 ```c
-static int sensor_handler(struct http_client_ctx *client, enum http_transaction_status status,
-			  const struct http_request_ctx *request_ctx,
-			  struct http_response_ctx *response_ctx, void *user_data)
-{
-	static uint8_t body[64];
+HTTP_RESOURCE_DEFINE(sensor_resource, iot_service, "/api/sensor", &sensor_resource_detail);
+```
 
-	if (status != HTTP_SERVER_REQUEST_DATA_FINAL) {
-		return 0;
-	}
+What you write is the callback body. Two things govern it.
 
-	uint32_t tenths = 200 + (sys_rand32_get() % 100);
-	int len = snprintf(body, sizeof(body), "{\"temperature\": %u.%u}",
-			   tenths / 10, tenths % 10);
+**The callback fires more than once per request.** It is called as the request
+streams in, and again when the request is complete. Only the final call expects a
+response, which is why the stub guards on:
 
-	response_ctx->status = HTTP_200_OK;
-	response_ctx->body = body;
-	response_ctx->body_len = len;
-	response_ctx->final_chunk = true;
-
+```c
+if (status != HTTP_SERVER_REQUEST_DATA_FINAL) {
 	return 0;
 }
 ```
 
-The handler is called more than once per request. `HTTP_SERVER_REQUEST_DATA_FINAL`
-means the request is complete and a response is now expected — a GET with no body
-still gets an earlier callback, which is why the guard is there.
+A GET carries no body and *still* gets an earlier callback. Respond on the wrong one
+and the client sees a truncated or empty reply.
 
-### 4. Actuating capability — `POST /api/control`
+**You answer by filling a struct, not by calling a send function.** The fields you
+need on `response_ctx`:
 
-```c
-if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
-	struct control_cmd cmd = { 0 };
-	int ret = json_obj_parse(payload, cursor, control_cmd_descr,
-				 ARRAY_SIZE(control_cmd_descr), &cmd);
+| Field | Meaning |
+|---|---|
+| `status` | `HTTP_200_OK` |
+| `headers` / `header_count` | the `Content-Type` array already declared in the stub |
+| `body` / `body_len` | your JSON and its length |
+| `final_chunk` | `true` — you have no more data to send |
 
-	if (ret == BIT_MASK(ARRAY_SIZE(control_cmd_descr))) {
-		led_set(cmd.state);
-	}
-	...
-}
+The body must be JSON with a field named exactly `temperature`; that is what the
+dashboard reads. `sys_rand32_get()` is already included for the simulated reading.
+Anything in 20.0–29.9 °C is fine.
+
+Check it before moving on:
+
+```bash
+curl http://<board-ip>/api/sensor
+# {"temperature": 24.7}
 ```
 
-Two details worth stopping on:
+### 4. Actuating capability — `POST /api/control`  ·  TASK 4
 
-- **The body can arrive in pieces.** Even a 12-byte payload may be split across
-  callbacks, so `main.c` accumulates into a buffer and only parses at
-  `..._DATA_FINAL`. This is normal for streamed HTTP, and forgetting it produces a
-  parser that works on your desk and fails on a loaded network.
-- **`json_obj_parse` returns a bitmask**, not 0 on success — one bit per field it
-  filled. Comparing against `BIT_MASK(field_count)` is how you check that every
-  expected field was present.
+This one receives data, so it has two traps rather than one.
+
+**The body can arrive in pieces.** Even a 12-byte payload may be split across
+callbacks, so the handler must accumulate into a buffer and parse only at
+`HTTP_SERVER_REQUEST_DATA_FINAL`. That accumulation is written for you in the stub —
+read it, because forgetting this pattern produces a parser that works on your desk
+and fails on a loaded network.
+
+**`json_obj_parse()` does not return 0 on success.** It returns a *bitmask*, one bit
+per field it managed to fill. To check that every expected field was present:
+
+```c
+ret == BIT_MASK(ARRAY_SIZE(control_cmd_descr))
+```
+
+Treating a non-zero return as failure — or as success — is the usual bug here. The
+descriptor `control_cmd_descr` and the `struct control_cmd` are already declared; you
+call the parser, check it properly, and drive `led_set()` with the result.
+
+Then answer with the `ok_body` the stub declares, using the same `response_ctx`
+fields as TASK 3, so the dashboard sees `{"status": "ok"}`.
+
+```bash
+curl -X POST http://<board-ip>/api/control \
+     -H 'Content-Type: application/json' -d '{"state": 1}'
+# {"status": "ok"}   and the LED turns green
+```
 
 ### 5. The linker section
 

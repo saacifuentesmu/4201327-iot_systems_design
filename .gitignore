@@ -17,3 +17,6 @@ Rolando Herrero - Practical Internet of Things Networking_ Understanding IoT Lay
 
 # zephyr build output
 **/build/
+
+# clangd / IDE
+.cache/
