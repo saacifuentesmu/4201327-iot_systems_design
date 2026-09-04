@@ -234,16 +234,24 @@ which pin the LED is on and how it is driven; `main.c` only asks for
 `DT_ALIAS(led_strip)` and sets a colour. Port the application to a board with a plain
 GPIO LED and only the overlay changes.
 
-The whole API you need for TASK 2 is one struct and one call:
+**TASK 2** — in `led_set()`, replace the `TASK 2` comment and the `ARG_UNUSED(on);`
+line with:
 
 ```c
-struct led_rgb pixel = { .r = 0, .g = 0x40, .b = 0 };   /* 0x00-0xff per channel */
+	struct led_rgb pixel = { .r = 0, .g = 0, .b = 0 };
 
-led_strip_update_rgb(strip, &pixel, 1);                 /* 1 = chain length */
+	if (on) {
+		pixel.g = 0x40;
+	}
+
+	if (led_strip_update_rgb(strip, &pixel, 1) != 0) {
+		LOG_ERR("Failed to drive LED");
+	}
 ```
 
-`strip` is already resolved for you at the top of `main.c`. Full scale (`0xff`) is
-uncomfortably bright at desk distance; `0x40` is plenty.
+`strip` is resolved at the top of `main.c` from `DT_ALIAS(led_strip)`. Each channel is
+`0x00`–`0xff`; full scale is uncomfortably bright at desk distance, so `0x40` green is
+plenty. The `1` is the chain length — one LED on this board.
 
 ### 1. Wi-Fi credentials
 
@@ -280,57 +288,67 @@ The ESP32-C6 radio is **2.4 GHz only**. A 5 GHz-only SSID will never associate.
 
 ### 2. Which subsystems get built
 
-`prj.conf` selects which subsystems are built in. Every capability in the ISO model
-maps to a line here:
+`prj.conf` selects which subsystems are built in, so every capability in the ISO model
+maps to a line here.
+
+**TASK 1** — append to `prj.conf`:
 
 ```conf
 CONFIG_WIFI=y            # Network Interface Capability
 CONFIG_HTTP_SERVER=y     # Application Interface Capability
 CONFIG_JSON_LIBRARY=y    # Data Capability
 CONFIG_LED_STRIP=y       # Actuating Capability
-CONFIG_NET_DHCPV4=y
 ```
+
+Everything else the project needs — networking, DHCP, the HTTP parser — is already
+there. These four are the ones that map one-to-one onto capabilities, which is what
+your DDR has to account for.
 
 ### 3. Sensing capability — `GET /api/sensor`  ·  TASK 3
 
 Zephyr's HTTP server is declarative: a resource is bound to a service at build time,
-and your callback is invoked when a request arrives. The registration is already
-written for you:
+and your callback runs when a request arrives. The registration is already written:
 
 ```c
 HTTP_RESOURCE_DEFINE(sensor_resource, iot_service, "/api/sensor", &sensor_resource_detail);
 ```
 
-What you write is the callback body. Two things govern it.
-
-**The callback fires more than once per request.** It is called as the request
-streams in, and again when the request is complete. Only the final call expects a
-response, which is why the stub guards on:
+In `sensor_handler()`, replace the `TASK 3` comment and the two `ARG_UNUSED` lines
+with:
 
 ```c
-if (status != HTTP_SERVER_REQUEST_DATA_FINAL) {
+	if (status != HTTP_SERVER_REQUEST_DATA_FINAL) {
+		return 0;
+	}
+
+	/* Simulated reading: 20.0 - 29.9 degC */
+	uint32_t tenths = 200 + (sys_rand32_get() % 100);
+	int len = snprintf(body, sizeof(body), "{\"temperature\": %u.%u}", tenths / 10,
+			   tenths % 10);
+
+	LOG_INF("Telemetry requested, sent: %s", body);
+
+	response_ctx->status = HTTP_200_OK;
+	response_ctx->headers = headers;
+	response_ctx->header_count = ARRAY_SIZE(headers);
+	response_ctx->body = body;
+	response_ctx->body_len = len;
+	response_ctx->final_chunk = true;
+
 	return 0;
-}
 ```
 
-A GET carries no body and *still* gets an earlier callback. Respond on the wrong one
-and the client sees a truncated or empty reply.
+Two things to understand before you move on, because they generalise well beyond this
+lab.
 
-**You answer by filling a struct, not by calling a send function.** The fields you
-need on `response_ctx`:
+**The callback fires more than once per request.** It runs as the request streams in
+and again when it is complete. Only the final call expects a response — that is the
+early return. A GET carries no body and *still* gets an earlier callback, so without
+that guard the client sees a truncated or empty reply.
 
-| Field | Meaning |
-|---|---|
-| `status` | `HTTP_200_OK` |
-| `headers` / `header_count` | the `Content-Type` array already declared in the stub |
-| `body` / `body_len` | your JSON and its length |
-| `final_chunk` | `true` — you have no more data to send |
-
-The body must be JSON with a field named exactly `temperature`; that is what the
-dashboard reads. `sys_rand32_get()` is already included for the simulated reading.
-Anything in 20.0–29.9 °C is fine.
-
-Check it before moving on:
+**You answer by filling a struct, not by calling a send function.** `status`,
+`headers`/`header_count`, `body`/`body_len`, and `final_chunk = true` (you have no
+more data). The field is named `temperature` because that is what the dashboard reads.
 
 ```bash
 curl http://<board-ip>/api/sensor
@@ -339,27 +357,40 @@ curl http://<board-ip>/api/sensor
 
 ### 4. Actuating capability — `POST /api/control`  ·  TASK 4
 
-This one receives data, so it has two traps rather than one.
-
-**The body can arrive in pieces.** Even a 12-byte payload may be split across
-callbacks, so the handler must accumulate into a buffer and parse only at
-`HTTP_SERVER_REQUEST_DATA_FINAL`. That accumulation is written for you in the stub —
-read it, because forgetting this pattern produces a parser that works on your desk
-and fails on a loaded network.
-
-**`json_obj_parse()` does not return 0 on success.** It returns a *bitmask*, one bit
-per field it managed to fill. To check that every expected field was present:
+This endpoint receives data, so it has one more trap than TASK 3. Inside the
+`if (status == HTTP_SERVER_REQUEST_DATA_FINAL)` block, replace the `TASK 4` comment,
+the two `ARG_UNUSED` lines and the `cursor = 0;` with:
 
 ```c
-ret == BIT_MASK(ARRAY_SIZE(control_cmd_descr))
+		struct control_cmd cmd = { 0 };
+		int ret = json_obj_parse(payload, cursor, control_cmd_descr,
+					 ARRAY_SIZE(control_cmd_descr), &cmd);
+
+		if (ret == BIT_MASK(ARRAY_SIZE(control_cmd_descr))) {
+			LOG_INF("Actuating command received, LED state: %d", cmd.state);
+			led_set(cmd.state);
+		} else {
+			LOG_WRN("Could not parse control payload (ret %d)", ret);
+		}
+
+		cursor = 0;
+
+		response_ctx->status = HTTP_200_OK;
+		response_ctx->headers = headers;
+		response_ctx->header_count = ARRAY_SIZE(headers);
+		response_ctx->body = ok_body;
+		response_ctx->body_len = sizeof(ok_body) - 1;
+		response_ctx->final_chunk = true;
 ```
 
-Treating a non-zero return as failure — or as success — is the usual bug here. The
-descriptor `control_cmd_descr` and the `struct control_cmd` are already declared; you
-call the parser, check it properly, and drive `led_set()` with the result.
+**The body can arrive in pieces.** Even a 12-byte payload may be split across
+callbacks, which is why the code above the block accumulates into `payload` and only
+parses at `..._DATA_FINAL`. Read that accumulation — skipping this pattern produces a
+parser that works on your desk and fails on a loaded network.
 
-Then answer with the `ok_body` the stub declares, using the same `response_ctx`
-fields as TASK 3, so the dashboard sees `{"status": "ok"}`.
+**`json_obj_parse()` does not return 0 on success.** It returns a *bitmask*, one bit
+per field it filled, so success is `ret == BIT_MASK(ARRAY_SIZE(control_cmd_descr))`.
+Treating a non-zero return as an error is the usual bug here.
 
 ```bash
 curl -X POST http://<board-ip>/api/control \

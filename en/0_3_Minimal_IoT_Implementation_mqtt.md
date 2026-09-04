@@ -339,24 +339,58 @@ confirms a command was received.
 Work in order — TASK 1 and TASK 2 both cause build failures until they are done, and
 `main.c` already refers to `CONFIG_LAB_BROKER_ADDR`.
 
-TASK 3 is the same LED work as the HTTP lab, same overlay, same one-line API — see
-[section 0 there](0_2_Minimal_IoT_Implementation_http.md#0-a-warning-about-the-on-board-led)
-rather than relearning it here.
-
-For TASK 1, three of the four symbols are unchanged from the HTTP lab. Only the
-Application Interface line differs:
+**TASK 1** — append to `prj.conf`:
 
 ```conf
-CONFIG_MQTT_LIB=y        # Application Interface Capability - was CONFIG_HTTP_SERVER
+CONFIG_WIFI=y            # Network Interface Capability
+CONFIG_MQTT_LIB=y        # Application Interface Capability
+CONFIG_JSON_LIBRARY=y    # Data Capability
+CONFIG_LED_STRIP=y       # Actuating Capability
 ```
 
-That single substitution is the whole architectural change, expressed in the build
-configuration.
+Three of those four are identical to the HTTP lab. Only the Application Interface line
+changed — `CONFIG_MQTT_LIB` where the HTTP lab had `CONFIG_HTTP_SERVER`. That single
+substitution is the entire architectural change, expressed in the build configuration.
+Say so in your DDR.
+
+**TASK 3** — the LED is the same hardware, overlay and API as the HTTP lab. In
+`led_set()`, replace the `TASK 3` comment and `ARG_UNUSED(on);` with:
+
+```c
+	struct led_rgb pixel = { .r = 0, .g = 0, .b = 0 };
+
+	if (on) {
+		pixel.g = 0x40;
+	}
+
+	if (led_strip_update_rgb(strip, &pixel, 1) != 0) {
+		LOG_ERR("Failed to drive LED");
+	}
+```
 
 ### 1. Point the node at your broker
 
 The broker address is a Kconfig symbol, because the node must reach *your workstation*
-over the Wi-Fi network:
+over the Wi-Fi network.
+
+**TASK 2** — replace the `TASK 2` comment in `Kconfig` with:
+
+```kconfig
+config LAB_BROKER_ADDR
+	string "MQTT broker IPv4 address"
+	default "192.168.1.50"
+	help
+	  Your workstation's address on the Wi-Fi network, where Mosquitto is
+	  listening. Not "localhost" - that would mean the board itself.
+
+config LAB_BROKER_PORT
+	int "MQTT broker port"
+	default 1883
+```
+
+Notice the reversal worth recording in your DDR: the HTTP lab needed the *node's*
+address, configured on the dashboard. Here the node needs the *broker's* address and
+the dashboard needs neither. Then build:
 
 ```bash
 source ~/zephyrproject/env.sh          # every new terminal needs this
@@ -377,30 +411,37 @@ west build -p always -b esp32c6_devkitc/esp32c6/hpcore . \
 
 ### 2. Sensing capability — publishing telemetry  ·  TASK 5
 
-Nobody asks the node for a reading. It publishes on its own schedule, which means
-there is no request to respond to — only a message to describe. You describe it by
-filling a `struct mqtt_publish_param`:
+Nobody asks the node for a reading. It publishes on its own schedule, so there is no
+request to answer — only a message to describe.
 
-| Field | Holds |
-|---|---|
-| `message.topic.topic.utf8` / `.size` | the topic string and its length |
-| `message.topic.qos` | the delivery guarantee — your choice, see below |
-| `message.payload.data` / `.len` | the JSON bytes and their length |
-| `message_id` | any unique id; `sys_rand16_get()` is fine |
+In `publish_sensor()`, replace the `TASK 5` comment, the two `ARG_UNUSED` lines and
+`return 0;` with:
 
-then hand it to `mqtt_publish()`. The JSON itself is built for you in the stub, and
-uses the same `temperature` field as the HTTP lab.
+```c
+	param.message.topic.topic.utf8 = (uint8_t *)TOPIC_SENSOR;
+	param.message.topic.topic.size = strlen(TOPIC_SENSOR);
+	param.message.topic.qos = MQTT_QOS_0_AT_MOST_ONCE;
+	param.message.payload.data = payload;
+	param.message.payload.len = len;
+	param.message_id = sys_rand16_get();
 
-**Choose the QoS deliberately, and defend it in your DDR.** A telemetry sample is
-replaced two seconds later, so losing one costs nothing and acknowledging every one
-costs bandwidth and airtime on a battery-powered node. A control command gets no
-second chance. The two paths in this lab should not use the same QoS, and the
-reasoning — not the value — is what you are being assessed on.
+	LOG_INF("Publishing to %s: %s", TOPIC_SENSOR, payload);
+
+	return mqtt_publish(c, &param);
+```
+
+The JSON itself is already built above, using the same `temperature` field as the HTTP
+lab.
+
+**Why QoS 0 here.** A telemetry sample is replaced two seconds later, so losing one
+costs nothing, while acknowledging every one costs bandwidth and airtime on a
+battery-powered node. The control path below uses QoS 1, because a lost command gets
+no second chance. Explain that asymmetry in your DDR — it is the point of this task.
 
 ### 3. Actuating capability — receiving commands  ·  TASK 4
 
 Subscription happens once, from inside the `CONNACK` handler — you cannot subscribe
-before the broker has accepted the connection. That part is written for you:
+before the broker has accepted the connection. That part is already written:
 
 ```c
 case MQTT_EVT_CONNACK:
@@ -413,26 +454,47 @@ case MQTT_EVT_PUBLISH:
 	break;
 ```
 
-What you write is `handle_control_payload()`, and it has two traps that have nothing
-to do with HTTP:
+In `handle_control_payload()`, replace the `TASK 4` comment and the three
+`ARG_UNUSED` lines with:
+
+```c
+	ret = mqtt_read_publish_payload_blocking(c, payload, len);
+	if (ret < 0) {
+		LOG_ERR("Failed to read publish payload (%d)", ret);
+		return;
+	}
+	payload[len] = '\0';
+
+	ret = json_obj_parse(payload, len, control_cmd_descr,
+			     ARRAY_SIZE(control_cmd_descr), &cmd);
+	if (ret == BIT_MASK(ARRAY_SIZE(control_cmd_descr))) {
+		LOG_INF("Actuating command received, LED state: %d", cmd.state);
+		led_set(cmd.state);
+	} else {
+		LOG_WRN("Could not parse control payload (ret %d)", ret);
+	}
+
+	/* The dashboard publishes commands at QoS 1, so acknowledge them. */
+	if (pub->message.topic.qos == MQTT_QOS_1_AT_LEAST_ONCE) {
+		struct mqtt_puback_param ack = { .message_id = pub->message_id };
+
+		mqtt_publish_qos1_ack(c, &ack);
+	}
+```
+
+Two things here have no equivalent in the HTTP lab.
 
 **The payload is not in the event.** `MQTT_EVT_PUBLISH` hands you the topic and a
-length, but the bytes are still sitting in the socket. You must pull them out
-yourself with `mqtt_read_publish_payload_blocking()` before there is anything to
-parse. Reading `evt->param.publish.message.payload` directly gets you a length and no
-data.
+length, but the bytes are still sitting in the socket — hence the explicit
+`mqtt_read_publish_payload_blocking()` before there is anything to parse.
 
-**QoS 1 must be acknowledged.** The dashboard publishes commands at QoS 1, so the
-broker holds the message until the node confirms receipt. That confirmation is a
-PUBACK, sent with `mqtt_publish_qos1_ack()` and the message id from the incoming
-publish.
+**QoS 1 must be acknowledged.** The broker holds the message until the node confirms
+receipt, and that confirmation is the PUBACK at the end. Drop it and the symptom is
+instructive rather than obvious: the command works *once*, then the broker redelivers
+the same message indefinitely, because as far as it knows the node never got it. If
+your LED starts toggling on its own, this is why.
 
-Skip the PUBACK and the symptom is instructive rather than obvious: the command works
-*once*, and then the broker redelivers the same message indefinitely, because from
-its point of view the node never received it. If your LED starts toggling on its own,
-this is why.
-
-Parsing is the same `json_obj_parse()` bitmask check you already did in the HTTP lab.
+Parsing is the same `json_obj_parse()` bitmask check as the HTTP lab.
 
 ### 4. The loop you now own
 
