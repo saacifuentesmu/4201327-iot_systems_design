@@ -11,18 +11,8 @@ config LAB_WIFI_PSK
 	string "Wi-Fi password"
 	default "changeme"
 
-# -----------------------------------------------------------------------------
-# TASK 2 - Tell the node where the broker is.
-#
-# In the HTTP lab the dashboard needed the *node's* address. Here the node needs
-# the *broker's* address, and the dashboard needs neither. Declare two symbols:
-#
-#   LAB_BROKER_ADDR - string, the broker's IPv4 address, default "192.168.1.50"
-#   LAB_BROKER_PORT - int,    the broker's TCP port,     default 1883
-#
-# main.c already refers to CONFIG_LAB_BROKER_ADDR and CONFIG_LAB_BROKER_PORT,
-# so the build fails until both exist. Follow the style of the two symbols
-# above, and explain the reversal in your DDR.
-# -----------------------------------------------------------------------------
+# TASK 2 - declare LAB_BROKER_ADDR (string) and LAB_BROKER_PORT (int), following
+# the style above. Guide section 1 gives the values and explains why the node now
+# needs an address that the HTTP lab did not.
 
 source "Kconfig.zephyr"

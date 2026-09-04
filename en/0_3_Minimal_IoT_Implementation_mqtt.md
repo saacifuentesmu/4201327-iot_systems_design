@@ -339,9 +339,19 @@ confirms a command was received.
 Work in order — TASK 1 and TASK 2 both cause build failures until they are done, and
 `main.c` already refers to `CONFIG_LAB_BROKER_ADDR`.
 
-The LED overlay is identical to the HTTP lab — and carries the same warning: the
-C6-DevKitC-1's on-board LED is an **addressable WS2812 on GPIO8**, not a plain GPIO,
-so it is driven through the `led_strip` API. A GPIO write does nothing visible.
+TASK 3 is the same LED work as the HTTP lab, same overlay, same one-line API — see
+[section 0 there](0_2_Minimal_IoT_Implementation_http.md#0-a-warning-about-the-on-board-led)
+rather than relearning it here.
+
+For TASK 1, three of the four symbols are unchanged from the HTTP lab. Only the
+Application Interface line differs:
+
+```conf
+CONFIG_MQTT_LIB=y        # Application Interface Capability - was CONFIG_HTTP_SERVER
+```
+
+That single substitution is the whole architectural change, expressed in the build
+configuration.
 
 ### 1. Point the node at your broker
 

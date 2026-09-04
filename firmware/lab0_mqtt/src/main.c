@@ -54,12 +54,7 @@ static const struct json_obj_descr control_cmd_descr[] = {
 
 static void led_set(int on)
 {
-	/* TASK 3 - Actuating Capability.
-	 *
-	 * Identical to the HTTP lab: the on-board LED is an addressable WS2812
-	 * on GPIO8, so build a `struct led_rgb` and push it with
-	 * led_strip_update_rgb(strip, &pixel, 1). Keep brightness near 0x40.
-	 */
+	/* TASK 3 - Actuating Capability. Same as the HTTP lab. */
 	ARG_UNUSED(on);
 }
 
@@ -76,23 +71,10 @@ static void handle_control_payload(struct mqtt_client *c,
 		return;
 	}
 
-	/* TASK 4 - Actuating Capability, application side.
-	 *
-	 * Three steps, and the first two are easy to miss:
-	 *
-	 *   1. The event does NOT carry the payload. It gives you the topic and
-	 *      `len`; the bytes are still in the socket. Pull them out with
-	 *      mqtt_read_publish_payload_blocking(c, payload, len), then
-	 *      NUL-terminate.
-	 *   2. Parse the JSON with json_obj_parse() and control_cmd_descr, the
-	 *      same bitmask check as the HTTP lab, and call led_set().
-	 *   3. The dashboard publishes at QoS 1, so the broker is waiting for a
-	 *      PUBACK. Send one with mqtt_publish_qos1_ack() when
-	 *      pub->message.topic.qos == MQTT_QOS_1_AT_LEAST_ONCE.
-	 *
-	 * Skip step 3 and the command still works once - then the broker
-	 * redelivers it forever, because it never hears that you got it. Watch
-	 * for that; it is the lesson of this task.
+	/* TASK 4 - Actuating Capability.
+	 * The payload is not in the event: read `len` bytes out of the socket
+	 * first, then parse and actuate, then acknowledge. Guide section 3 explains
+	 * both the read and why the acknowledgement is not optional.
 	 */
 	ARG_UNUSED(ret);
 	ARG_UNUSED(cmd);
@@ -110,17 +92,9 @@ static int publish_sensor(struct mqtt_client *c)
 			   tenths / 10, tenths % 10);
 
 	/* TASK 5 - Sensing Capability.
-	 *
-	 * `payload` already holds the reading as JSON. Fill in `param`:
-	 *
-	 *   param.message.topic.topic.utf8 / .size   -> TOPIC_SENSOR
-	 *   param.message.topic.qos                  -> see below
-	 *   param.message.payload.data / .len        -> payload, len
-	 *   param.message_id                         -> sys_rand16_get()
-	 *
-	 * Choose the QoS deliberately. Telemetry is replaced every two seconds,
-	 * so a lost sample costs nothing; a lost LED command does not get a
-	 * second chance. Justify your choice in the DDR, then call mqtt_publish().
+	 * `payload` already holds the JSON. Describe the message in `param` and
+	 * publish it. Guide section 2 lists the fields and asks you to justify the
+	 * QoS you pick.
 	 */
 	ARG_UNUSED(len);
 	ARG_UNUSED(param);

@@ -43,13 +43,7 @@ static const struct json_obj_descr control_cmd_descr[] = {
 static void led_set(int on)
 {
 	/* TASK 2 - Actuating Capability.
-	 *
-	 * The on-board LED is an addressable WS2812 on GPIO8, not a plain GPIO,
-	 * so a level write does nothing. Build a `struct led_rgb` and push it
-	 * with led_strip_update_rgb(strip, &pixel, 1).
-	 *
-	 * Keep the brightness low (0x40 is plenty) - the LED is uncomfortably
-	 * bright at full scale.
+	 * Drive the WS2812 from `on`. Guide section 0 has the two lines you need.
 	 */
 	ARG_UNUSED(on);
 }
@@ -66,19 +60,9 @@ static int sensor_handler(struct http_client_ctx *client, enum http_transaction_
 	};
 
 	/* TASK 3 - Sensing Capability.
-	 *
-	 * This callback fires more than once per request. Only respond on
-	 * HTTP_SERVER_REQUEST_DATA_FINAL, which means the request is complete.
-	 *
-	 * Then:
-	 *   1. Produce a simulated reading between 20.0 and 29.9 degC.
-	 *      sys_rand32_get() is already included.
-	 *   2. Format it into `body` as {"temperature": 24.5} - the dashboard
-	 *      reads the field named exactly "temperature".
-	 *   3. Fill response_ctx: status, headers/header_count, body, body_len,
-	 *      and set final_chunk = true.
-	 *
-	 * Verify with:  curl http://<board-ip>/api/sensor
+	 * Return early unless status is HTTP_SERVER_REQUEST_DATA_FINAL, then put a
+	 * simulated 20.0-29.9 degC reading into `body` and fill response_ctx.
+	 * Guide section 3 lists the fields and explains the early return.
 	 */
 	ARG_UNUSED(body);
 	ARG_UNUSED(headers);
@@ -123,22 +107,9 @@ static int control_handler(struct http_client_ctx *client, enum http_transaction
 
 	if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
 		/* TASK 4 - Actuating Capability, application side.
-		 *
-		 * `payload` holds `cursor` bytes of JSON: {"state": 0} or
-		 * {"state": 1}. The accumulation above is already done for you,
-		 * because the body can arrive split across callbacks.
-		 *
-		 *   1. Parse it with json_obj_parse() and control_cmd_descr.
-		 *      Careful: json_obj_parse returns a BITMASK of the fields
-		 *      it filled, not 0 on success. Compare it against
-		 *      BIT_MASK(ARRAY_SIZE(control_cmd_descr)).
-		 *   2. On success, call led_set() with the parsed state.
-		 *   3. Reset `cursor` to 0 for the next request.
-		 *   4. Answer with ok_body so the dashboard sees {"status": "ok"}.
-		 *
-		 * Verify with:
-		 *   curl -X POST http://<board-ip>/api/control \
-		 *        -H 'Content-Type: application/json' -d '{"state": 1}'
+		 * `payload` holds `cursor` bytes of JSON; the accumulation above is
+		 * done for you. Parse it, drive led_set(), reset cursor, and answer
+		 * with ok_body. Guide section 4 covers the json_obj_parse return value.
 		 */
 		ARG_UNUSED(ok_body);
 		ARG_UNUSED(headers);

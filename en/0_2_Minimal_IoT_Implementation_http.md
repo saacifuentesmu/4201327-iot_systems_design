@@ -234,6 +234,17 @@ which pin the LED is on and how it is driven; `main.c` only asks for
 `DT_ALIAS(led_strip)` and sets a colour. Port the application to a board with a plain
 GPIO LED and only the overlay changes.
 
+The whole API you need for TASK 2 is one struct and one call:
+
+```c
+struct led_rgb pixel = { .r = 0, .g = 0x40, .b = 0 };   /* 0x00-0xff per channel */
+
+led_strip_update_rgb(strip, &pixel, 1);                 /* 1 = chain length */
+```
+
+`strip` is already resolved for you at the top of `main.c`. Full scale (`0xff`) is
+uncomfortably bright at desk distance; `0x40` is plenty.
+
 ### 1. Wi-Fi credentials
 
 Wi-Fi credentials are Kconfig symbols declared in the app's own `Kconfig`:
