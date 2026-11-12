@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 432" font-family="Inter, 'Segoe UI', 'DejaVu Sans', Arial, sans-serif">
+<defs><marker id="ar-ink" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#0f172a"/></marker><marker id="ar-gray" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#475569"/></marker><marker id="ar-c1" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#ea580c"/></marker><marker id="ar-c2" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#2563eb"/></marker><marker id="ar-c3" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#16a34a"/></marker><marker id="ar-c4" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#0d9488"/></marker><marker id="ar-c5" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#e11d48"/></marker><marker id="ar-c6" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#7c3aed"/></marker><marker id="ar-c7" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#d97706"/></marker><marker id="ar-c8" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#db2777"/></marker></defs>
+<defs><marker id="a-ink" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#0f172a"/></marker><marker id="a-muted" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#475569"/></marker><marker id="a-c1" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#ea580c"/></marker><marker id="a-c2" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#2563eb"/></marker><marker id="a-c3" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#16a34a"/></marker><marker id="a-c4" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#0d9488"/></marker><marker id="a-c5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#e11d48"/></marker><marker id="a-c6" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#7c3aed"/></marker><marker id="a-c7" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#d97706"/></marker><marker id="a-c8" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#db2777"/></marker><marker id="a-gray" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#475569"/></marker></defs>
+<rect x="20.0" y="70.0" width="460.0" height="250.0" rx="18" fill="#f8fafc" stroke="#475569" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="40.0" y="102.0" text-anchor="start" font-size="19" font-weight="700" fill="#475569">vehicle</text>
+<rect x="40.0" y="150.0" width="170.0" height="90.0" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+<text x="125.0" y="191.0" text-anchor="middle" font-size="21" font-weight="700" fill="#d97706">ECUs</text>
+<text x="125.0" y="214.0" text-anchor="middle" font-size="17" font-weight="400" fill="#0f172a">engine, brakes</text>
+<line x1="210.0" y1="195.0" x2="320.0" y2="195.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<text x="265.0" y="182.0" text-anchor="middle" font-size="15" font-weight="600" fill="#475569">CAN · J1939</text>
+<rect x="320.0" y="150.0" width="140.0" height="90.0" rx="10" fill="#fce7f3" stroke="#db2777" stroke-width="2"/>
+<text x="390.0" y="191.0" text-anchor="middle" font-size="21" font-weight="700" fill="#db2777">gateway</text>
+<text x="390.0" y="214.0" text-anchor="middle" font-size="17" font-weight="400" fill="#0f172a">GPS + modem</text>
+<line x1="460.0" y1="195.0" x2="570.0" y2="195.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<text x="522.0" y="182.0" text-anchor="middle" font-size="16" font-weight="600" fill="#475569">cellular</text>
+<rect x="570.0" y="160.0" width="170.0" height="70.0" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="655.0" y="201.7" text-anchor="middle" font-size="20" font-weight="700" fill="#475569">vendor cloud</text>
+<line x1="740.0" y1="195.0" x2="790.0" y2="195.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<rect x="790.0" y="160.0" width="150.0" height="70.0" rx="10" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+<text x="865.0" y="201.7" text-anchor="middle" font-size="20" font-weight="700" fill="#ea580c">web portal</text>
+<line x1="940.0" y1="195.0" x2="985.0" y2="95.0" stroke="#ea580c" stroke-width="2" marker-end="url(#a-c1)"/>
+<rect x="985.0" y="60.0" width="205.0" height="70.0" rx="10" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+<text x="1087.5" y="91.0" text-anchor="middle" font-size="19" font-weight="700" fill="#ea580c">dispatcher</text>
+<text x="1087.5" y="112.0" text-anchor="middle" font-size="15" font-weight="400" fill="#0f172a">where is each truck?</text>
+<line x1="940.0" y1="195.0" x2="985.0" y2="195.0" stroke="#ea580c" stroke-width="2" marker-end="url(#a-c1)"/>
+<rect x="985.0" y="160.0" width="205.0" height="70.0" rx="10" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+<text x="1087.5" y="191.0" text-anchor="middle" font-size="19" font-weight="700" fill="#ea580c">mechanic</text>
+<text x="1087.5" y="212.0" text-anchor="middle" font-size="15" font-weight="400" fill="#0f172a">which engine faulted?</text>
+<line x1="940.0" y1="195.0" x2="985.0" y2="295.0" stroke="#ea580c" stroke-width="2" marker-end="url(#a-c1)"/>
+<rect x="985.0" y="260.0" width="205.0" height="70.0" rx="10" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+<text x="1087.5" y="291.0" text-anchor="middle" font-size="19" font-weight="700" fill="#ea580c">fleet manager</text>
+<text x="1087.5" y="312.0" text-anchor="middle" font-size="15" font-weight="400" fill="#0f172a">idling, inspections</text>
+<text x="20.0" y="390.0" text-anchor="start" font-size="19" font-weight="700" fill="#0f172a">the ECUs never speak IP: the gateway parses and re-encodes, like your bridge</text>
+<text x="20.0" y="418.0" text-anchor="start" font-size="18" font-weight="400" fill="#475569">each alert goes to the role that can act on it</text>
+</svg>

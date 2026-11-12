@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 486" font-family="Inter, 'Segoe UI', 'DejaVu Sans', Arial, sans-serif">
+<defs><marker id="ar-ink" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#0f172a"/></marker><marker id="ar-gray" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#475569"/></marker><marker id="ar-c1" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#ea580c"/></marker><marker id="ar-c2" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#2563eb"/></marker><marker id="ar-c3" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#16a34a"/></marker><marker id="ar-c4" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#0d9488"/></marker><marker id="ar-c5" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#e11d48"/></marker><marker id="ar-c6" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#7c3aed"/></marker><marker id="ar-c7" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#d97706"/></marker><marker id="ar-c8" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#db2777"/></marker></defs>
+<defs><marker id="a-ink" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#0f172a"/></marker><marker id="a-muted" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#475569"/></marker><marker id="a-c1" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#ea580c"/></marker><marker id="a-c2" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#2563eb"/></marker><marker id="a-c3" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#16a34a"/></marker><marker id="a-c4" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#0d9488"/></marker><marker id="a-c5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#e11d48"/></marker><marker id="a-c6" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#7c3aed"/></marker><marker id="a-c7" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#d97706"/></marker><marker id="a-c8" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#db2777"/></marker><marker id="a-gray" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#475569"/></marker></defs>
+<rect x="425.0" y="52.0" width="195.0" height="400.0" rx="12" fill="#fce7f3" stroke="none" stroke-width="0"/>
+<text x="212.5" y="40.0" text-anchor="middle" font-size="20" font-weight="800" fill="#d97706">thing</text>
+<text x="522.5" y="40.0" text-anchor="middle" font-size="20" font-weight="800" fill="#db2777">bridge</text>
+<text x="812.5" y="40.0" text-anchor="middle" font-size="20" font-weight="800" fill="#475569">ingest</text>
+<text x="1002.5" y="40.0" text-anchor="middle" font-size="20" font-weight="800" fill="#475569">store</text>
+<text x="1165.0" y="40.0" text-anchor="middle" font-size="20" font-weight="800" fill="#ea580c">view</text>
+<text x="10.0" y="120.0" text-anchor="start" font-size="22" font-weight="800" fill="#0f172a">Lab 7</text>
+<text x="10.0" y="144.0" text-anchor="start" font-size="16" font-weight="400" fill="#475569">your team</text>
+<rect x="125.0" y="90.0" width="175.0" height="64.0" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+<text x="212.5" y="128.0" text-anchor="middle" font-size="18" font-weight="700" fill="#d97706">ESP32-C6 node</text>
+<rect x="435.0" y="90.0" width="175.0" height="64.0" rx="10" fill="#fce7f3" stroke="#db2777" stroke-width="2"/>
+<text x="522.5" y="118.0" text-anchor="middle" font-size="18" font-weight="700" fill="#db2777">bridge</text>
+<text x="522.5" y="138.0" text-anchor="middle" font-size="14" font-weight="400" fill="#0f172a">laptop, Pi, gateway</text>
+<rect x="720.0" y="90.0" width="185.0" height="64.0" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="812.5" y="128.0" text-anchor="middle" font-size="18" font-weight="700" fill="#475569">Mosquitto</text>
+<rect x="935.0" y="90.0" width="135.0" height="64.0" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="1002.5" y="128.0" text-anchor="middle" font-size="18" font-weight="700" fill="#475569">InfluxDB</text>
+<rect x="1095.0" y="90.0" width="140.0" height="64.0" rx="10" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+<text x="1165.0" y="128.0" text-anchor="middle" font-size="18" font-weight="700" fill="#ea580c">Grafana</text>
+<line x1="905.0" y1="122.0" x2="935.0" y2="122.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<line x1="300.0" y1="122.0" x2="435.0" y2="122.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<text x="367.5" y="112.0" text-anchor="middle" font-size="14" font-weight="600" fill="#475569">Thread · CoAPS</text>
+<line x1="610.0" y1="122.0" x2="720.0" y2="122.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<text x="665.0" y="112.0" text-anchor="middle" font-size="14" font-weight="600" fill="#475569">LAN · MQTT</text>
+<line x1="1070.0" y1="122.0" x2="1095.0" y2="122.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<text x="10.0" y="270.0" text-anchor="start" font-size="22" font-weight="800" fill="#0f172a">Pets</text>
+<text x="10.0" y="294.0" text-anchor="start" font-size="16" font-weight="400" fill="#475569">GPS collars</text>
+<rect x="125.0" y="240.0" width="175.0" height="64.0" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+<text x="212.5" y="268.0" text-anchor="middle" font-size="18" font-weight="700" fill="#d97706">collar</text>
+<text x="212.5" y="288.0" text-anchor="middle" font-size="14" font-weight="400" fill="#0f172a">Wi-Fi · BLE · LTE-M</text>
+<rect x="435.0" y="240.0" width="175.0" height="64.0" rx="10" fill="#fce7f3" stroke="#db2777" stroke-width="2"/>
+<text x="522.5" y="268.0" text-anchor="middle" font-size="18" font-weight="700" fill="#db2777">owner's phone</text>
+<text x="522.5" y="288.0" text-anchor="middle" font-size="14" font-weight="400" fill="#0f172a">BLE path only</text>
+<rect x="720.0" y="240.0" width="185.0" height="64.0" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="812.5" y="268.0" text-anchor="middle" font-size="18" font-weight="700" fill="#475569">cloud ingest</text>
+<text x="812.5" y="288.0" text-anchor="middle" font-size="14" font-weight="400" fill="#0f172a">MQTT · CoAP · HTTPS</text>
+<rect x="935.0" y="240.0" width="135.0" height="64.0" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="1002.5" y="278.0" text-anchor="middle" font-size="18" font-weight="700" fill="#475569">DynamoDB</text>
+<rect x="1095.0" y="240.0" width="140.0" height="64.0" rx="10" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+<text x="1165.0" y="268.0" text-anchor="middle" font-size="18" font-weight="700" fill="#ea580c">console</text>
+<text x="1165.0" y="288.0" text-anchor="middle" font-size="14" font-weight="400" fill="#0f172a">staff only</text>
+<line x1="905.0" y1="272.0" x2="935.0" y2="272.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<line x1="300.0" y1="272.0" x2="435.0" y2="272.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<text x="367.5" y="262.0" text-anchor="middle" font-size="14" font-weight="600" fill="#475569">BLE</text>
+<line x1="610.0" y1="272.0" x2="720.0" y2="272.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<text x="665.0" y="262.0" text-anchor="middle" font-size="14" font-weight="600" fill="#475569">HTTPS</text>
+<line x1="1070.0" y1="272.0" x2="1095.0" y2="272.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<text x="10.0" y="405.0" text-anchor="start" font-size="22" font-weight="800" fill="#0f172a">Trucks</text>
+<text x="10.0" y="429.0" text-anchor="start" font-size="16" font-weight="400" fill="#475569">telematics</text>
+<rect x="125.0" y="375.0" width="175.0" height="64.0" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+<text x="212.5" y="413.0" text-anchor="middle" font-size="18" font-weight="700" fill="#d97706">vehicle ECUs</text>
+<rect x="435.0" y="375.0" width="175.0" height="64.0" rx="10" fill="#fce7f3" stroke="#db2777" stroke-width="2"/>
+<text x="522.5" y="403.0" text-anchor="middle" font-size="18" font-weight="700" fill="#db2777">gateway</text>
+<text x="522.5" y="423.0" text-anchor="middle" font-size="14" font-weight="400" fill="#0f172a">telematics unit</text>
+<rect x="1095.0" y="375.0" width="140.0" height="64.0" rx="10" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+<text x="1165.0" y="413.0" text-anchor="middle" font-size="18" font-weight="700" fill="#ea580c">web portal</text>
+<rect x="720.0" y="375.0" width="350.0" height="64.0" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="895.0" y="403.0" text-anchor="middle" font-size="18" font-weight="700" fill="#475569">vendor cloud</text>
+<text x="895.0" y="423.0" text-anchor="middle" font-size="14" font-weight="400" fill="#0f172a">ingest and store, one name</text>
+<line x1="300.0" y1="407.0" x2="435.0" y2="407.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<text x="367.5" y="397.0" text-anchor="middle" font-size="14" font-weight="600" fill="#475569">CAN · J1939</text>
+<line x1="610.0" y1="407.0" x2="720.0" y2="407.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<text x="665.0" y="397.0" text-anchor="middle" font-size="14" font-weight="600" fill="#475569">cellular</text>
+<line x1="1070.0" y1="407.0" x2="1095.0" y2="407.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<polyline points="212.0,240.0 212.0,210.0 812.0,210.0 812.0,240.0" fill="none" stroke="#db2777" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#a-c8)"/>
+<text x="512.0" y="202.0" text-anchor="middle" font-size="16" font-weight="600" fill="#db2777">Wi-Fi (CoAP), LTE-M (MQTT-SN): the collar speaks IP; the cloud ingest translates</text>
+<text x="10.0" y="476.0" text-anchor="start" font-size="19" font-weight="400" fill="#475569">the names change with the business; the five jobs stay</text>
+</svg>

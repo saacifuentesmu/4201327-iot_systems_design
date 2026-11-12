@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 466" font-family="Inter, 'Segoe UI', 'DejaVu Sans', Arial, sans-serif">
+<defs><marker id="ar-ink" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#0f172a"/></marker><marker id="ar-gray" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#475569"/></marker><marker id="ar-c1" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#ea580c"/></marker><marker id="ar-c2" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#2563eb"/></marker><marker id="ar-c3" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#16a34a"/></marker><marker id="ar-c4" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#0d9488"/></marker><marker id="ar-c5" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#e11d48"/></marker><marker id="ar-c6" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#7c3aed"/></marker><marker id="ar-c7" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#d97706"/></marker><marker id="ar-c8" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#db2777"/></marker></defs>
+<defs><marker id="a-ink" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#0f172a"/></marker><marker id="a-muted" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#475569"/></marker><marker id="a-c1" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#ea580c"/></marker><marker id="a-c2" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#2563eb"/></marker><marker id="a-c3" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#16a34a"/></marker><marker id="a-c4" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#0d9488"/></marker><marker id="a-c5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#e11d48"/></marker><marker id="a-c6" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#7c3aed"/></marker><marker id="a-c7" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#d97706"/></marker><marker id="a-c8" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#db2777"/></marker><marker id="a-gray" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="12" refX="13" refY="6" orient="auto"><path d="M0 0 L14 6 L0 12 Z" fill="#475569"/></marker></defs>
+<rect x="20.0" y="90.0" width="140.0" height="290.0" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+<text x="90.0" y="231.0" text-anchor="middle" font-size="24" font-weight="700" fill="#d97706">collar</text>
+<text x="90.0" y="257.0" text-anchor="middle" font-size="20" font-weight="400" fill="#0f172a">on the dog</text>
+<rect x="470.0" y="92.0" width="160.0" height="56.0" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="550.0" y="126.3" text-anchor="middle" font-size="19" font-weight="700" fill="#475569">CoAP server</text>
+<line x1="630.0" y1="120.0" x2="680.0" y2="120.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<line x1="160.0" y1="120.0" x2="470.0" y2="120.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<text x="314.0" y="108.0" text-anchor="middle" font-size="17" font-weight="600" fill="#475569">Wi-Fi · CoAP</text>
+<rect x="470.0" y="207.0" width="160.0" height="56.0" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="550.0" y="241.3" text-anchor="middle" font-size="19" font-weight="700" fill="#475569">AWS IoT Core</text>
+<line x1="630.0" y1="235.0" x2="680.0" y2="235.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<line x1="160.0" y1="235.0" x2="470.0" y2="235.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<text x="314.0" y="223.0" text-anchor="middle" font-size="17" font-weight="600" fill="#475569">LTE-M · MQTT-SN</text>
+<rect x="470.0" y="322.0" width="160.0" height="56.0" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="550.0" y="356.3" text-anchor="middle" font-size="19" font-weight="700" fill="#475569">app API</text>
+<line x1="630.0" y1="350.0" x2="680.0" y2="350.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<line x1="160.0" y1="350.0" x2="230.0" y2="350.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<text x="195.0" y="338.0" text-anchor="middle" font-size="17" font-weight="600" fill="#475569">BLE</text>
+<rect x="230.0" y="320.0" width="172.0" height="60.0" rx="10" fill="#fce7f3" stroke="#db2777" stroke-width="2"/>
+<text x="316.0" y="346.0" text-anchor="middle" font-size="18" font-weight="700" fill="#db2777">owner's phone</text>
+<text x="316.0" y="366.0" text-anchor="middle" font-size="14" font-weight="400" fill="#0f172a">the bridge here</text>
+<line x1="402.0" y1="350.0" x2="470.0" y2="350.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<text x="436.0" y="338.0" text-anchor="middle" font-size="15" font-weight="600" fill="#475569">HTTPS</text>
+<rect x="680.0" y="92.0" width="150.0" height="286.0" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="755.0" y="200.0" text-anchor="middle" font-size="20" font-weight="700" fill="#475569">telemetry</text>
+<text x="755.0" y="225.0" text-anchor="middle" font-size="20" font-weight="700" fill="#475569">tables</text>
+<rect x="694.0" y="250.0" width="122.0" height="64.0" rx="8" fill="#fce7f3" stroke="#db2777" stroke-width="2"/>
+<text x="755.0" y="276.0" text-anchor="middle" font-size="16" font-weight="700" fill="#db2777">one key set</text>
+<text x="755.0" y="298.0" text-anchor="middle" font-size="16" font-weight="700" fill="#db2777">three paths</text>
+<line x1="830.0" y1="235.0" x2="865.0" y2="235.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<rect x="865.0" y="200.0" width="160.0" height="70.0" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+<text x="945.0" y="231.0" text-anchor="middle" font-size="20" font-weight="700" fill="#475569">collector</text>
+<text x="945.0" y="253.0" text-anchor="middle" font-size="16" font-weight="400" fill="#0f172a">polls by activity</text>
+<line x1="1025.0" y1="235.0" x2="1050.0" y2="235.0" stroke="#0f172a" stroke-width="2.5" marker-end="url(#a-ink)"/>
+<rect x="1050.0" y="200.0" width="140.0" height="70.0" rx="10" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+<text x="1120.0" y="231.0" text-anchor="middle" font-size="21" font-weight="700" fill="#ea580c">console</text>
+<text x="1120.0" y="254.0" text-anchor="middle" font-size="17" font-weight="400" fill="#0f172a">staff login</text>
+<rect x="1062.0" y="284.0" width="116.0" height="30.0" rx="15" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+<circle cx="1080.0" cy="299.0" r="6" fill="#16a34a" stroke="none" stroke-width="0"/>
+<text x="1094.0" y="305.0" text-anchor="start" font-size="16" font-weight="700" fill="#16a34a">Live 3s</text>
+<text x="1120.0" y="342.0" text-anchor="middle" font-size="15" font-weight="400" fill="#475569">the console</text>
+<text x="1120.0" y="360.0" text-anchor="middle" font-size="15" font-weight="400" fill="#475569">times itself</text>
+<rect x="865.0" y="20.0" width="325.0" height="70.0" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+<text x="1027.5" y="51.0" text-anchor="middle" font-size="20" font-weight="700" fill="#7c3aed">health checks</text>
+<text x="1027.5" y="73.0" text-anchor="middle" font-size="16" font-weight="400" fill="#0f172a">every minute, inside and out</text>
+<polyline points="865.0,55.0 550.0,55.0 550.0,92.0" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#a-c6)"/>
+<line x1="1120.0" y1="90.0" x2="1120.0" y2="200.0" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#a-c6)"/>
+<text x="20.0" y="425.0" text-anchor="start" font-size="20" font-weight="700" fill="#0f172a">three radios, three protocols, one meaning per field</text>
+<text x="20.0" y="452.0" text-anchor="start" font-size="18" font-weight="400" fill="#475569">and the console is a product too: it has its own health page</text>
+</svg>
