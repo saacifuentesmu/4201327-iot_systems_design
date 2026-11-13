@@ -240,7 +240,7 @@ cloud: it terminates one protocol and speaks another, exactly what the bridge do
 ![w:1150](img/fleet_scales.svg)
 
 <!--
-23:00–25:00. Read the columns, not the rows. Every fleet has a thing, something that
+23:00–24:30. Read the columns, not the rows. Every fleet has a thing, something that
 turns its local protocol into Internet messages, a front door, a store and a screen.
 The lab runs the bridge on a laptop because that is what you have; a deployed field runs
 it on an always-on box: a Raspberry Pi, the border router's Linux host, or a cloud VM
@@ -262,7 +262,7 @@ something still has to turn CoAP into what the store and the screens speak.
 ![w:1150](img/fleet_tracker.svg)
 
 <!--
-25:00–28:30. A GPS collar for dogs, in production. It reaches the cloud three ways: CoAP over
+24:30–27:00. A GPS collar for dogs, in production. It reaches the cloud three ways: CoAP over
 Wi-Fi at home (the protocol of Labs 3–6), MQTT-SN over LTE-M when the dog is out, and
 BLE through the owner's phone, which is the bridge on that path only. All three must
 publish the same keys with the same meaning: once, a "charging" field meant three
@@ -277,6 +277,46 @@ should.
 
 ---
 
+<!-- _class: s5 question -->
+<!-- _header: 5 · Production -->
+
+## A 350 KB upload takes 3 s by FTP over a 150 ms round trip. CoAP sends 1 KB blocks, each waiting for its ACK. How long with CoAP?
+
+1. About 1 s: CoAP's header is 4 bytes
+2. About 3 s: the bytes don't change
+3. About a minute
+4. It can't: CoAP has no files
+
+<!--
+27:00–29:00. Let them compute before they vote: 350 blocks, one round trip each,
+350 × 0.15 s ≈ 50 s. Answer: C. A is a common field mistake when an upload gets
+expensive: a smaller header saves bytes, and bytes weren't the problem. B forgets that every block waits for its ACK. D: block-wise
+transfer (RFC 7959) exists to carry files over CoAP; it pays a round trip per block.
+-->
+
+---
+
+<!-- _class: s5 figure -->
+<!-- _header: 5 · Production -->
+
+## A file upload is round trips plus bytes
+
+![w:1150](img/fleet_upload.svg)
+
+<!--
+29:00–31:00. Each file pays a few round trips to set up and a few to finish, around its
+bytes, and the radio is on for all of them. Compression shrinks the bytes, not the round
+trips, so small files stay almost all waiting. CoAP wins for small messages (one
+round trip, no connection) and loses for bulk unless it sends several blocks per round
+trip (RFC 9177) or runs over TCP (RFC 8323). The rule: compression cuts the bytes;
+batching on one open connection cuts the round trips. Measure the round trip before
+you pick a protocol. Your health report is small, so CoAP fits; Lab 8's firmware image
+is bulk, and the same arithmetic applies. The top bars are rounded from a production
+log; the hatched bars are computed.
+-->
+
+---
+
 <!-- _class: s5 figure -->
 <!-- _header: 5 · Production -->
 
@@ -285,7 +325,7 @@ should.
 ![w:1150](img/fleet_trucks.svg)
 
 <!--
-28:30–32:00. A telematics vendor for trucks, buses and municipal fleets. A vehicle's
+31:00–33:30. A telematics vendor for trucks, buses and municipal fleets. A vehicle's
 computers (engine, transmission, brakes) talk on a CAN bus with J1939, or OBD-II on
 light vehicles; they never speak IP. The gateway reads the bus and its own GPS and
 sends over cellular. Live: open the portal on a demo account. Point at the map, an
@@ -305,7 +345,7 @@ alert that reaches everyone reaches no one. Ask the room: on SoilSense, who gets
 ![w:1150](img/fleet_console.svg)
 
 <!--
-32:00–34:00. Five things both consoles have that your Grafana board doesn't. 1: a
+33:30–35:00. Five things both consoles have that your Grafana board doesn't. 1: a
 dashboard that silently stops updating shows a healthy fleet; the pill makes the
 console's own silence visible: today's lesson applied to itself. 2 and 3: the fleet
 view finds the one device; the device page explains it. 4: hysteresis, as in a
@@ -329,7 +369,7 @@ detection of its own failure, drill-down and access control, not colors.
 The dashboard tells Edwin which node to visit. It can't fix one, or update 200.
 
 <!--
-34:00–35:00. Pillar 3 (watching the system over time) now exists. Pillar 2 (signed code)
+35:00–35:30. Pillar 3 (watching the system over time) now exists. Pillar 2 (signed code)
 is Lab 8's stretch: the same path the telemetry comes up is how an update would go
 down. And Samuel's chaos script: the dashboard is how you'll prove recovery happened
 without anyone touching a board.
@@ -344,7 +384,7 @@ without anyone touching a board.
 > Every node reports its own health, and silence is a signal too.
 
 <!--
-35:00–35:30. First line of today's DDR entry.
+35:30–36:00. First line of today's DDR entry.
 -->
 
 ---
@@ -365,7 +405,7 @@ without anyone touching a board.
 Predictions are due before you start the stack.
 
 <!--
-35:30–39:00. Teams of four: two pairs, one fleet, one key. Pull the Docker images at
+36:00–39:00. Teams of four: two pairs, one fleet, one key. Pull the Docker images at
 home (setup §7): about 1 GB. The Lab 0 broker holds port 1883: stop it, or move the
 stack's broker. Name the nodes on the bridge's command line; the dashboard shows those
 names. A failed handshake is counted when the node gives up, so that light lags the
@@ -377,7 +417,7 @@ probe: time it anyway.
 ## References
 
 - ISO/IEC 30141:2024 §6.4 (Usage), Figure A.5 (OMD, RAID), Table A.3
-- [MQTT 3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt-v3.1.1.html) · RFC 7641 (Observe) · SAE J1939
+- [MQTT 3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt-v3.1.1.html) · RFC 7641 (Observe) · RFC 7959 and RFC 9177 (block-wise) · SAE J1939
 - [Grafana](https://grafana.com/docs/grafana/latest/) · [InfluxDB 2](https://docs.influxdata.com/influxdb/v2/) · [Telegraf](https://docs.influxdata.com/telegraf/v1/)
 - [Lab 7](../labs/lab7.md) · [SOP-07](../labs/sops/sop07_fleet.md)
 

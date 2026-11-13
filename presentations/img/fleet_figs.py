@@ -7,6 +7,8 @@ fleet_dashboard.png is a screenshot of tools/fleet's Grafana dashboard on the co
 bench (2026-10-23, three ESP32-C6 nodes), taken during the Lab 7 drills;
 fleet_dashboard.svg embeds it with its callouts. The pet-tracker and truck figures draw
 two production architectures in outline; the signal traces are shapes, not data.
+fleet_upload.svg rounds a typical FTP upload from a production tracker's log; its
+hatched bars are computed with a 150 ms round trip, not measured.
 """
 import base64
 import math
@@ -410,10 +412,73 @@ def acting():
     return fig(1100, 160, body)
 
 
+
+def upload():
+    x0, k, h, rtt = 330, 0.26, 34, 150
+    defs = ("<defs>" + "".join(
+        f'<pattern id="h-{n}" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
+        f'<rect width="8" height="8" fill="#fff"/><rect width="4" height="8" fill="{c}"/></pattern>'
+        for n, c in (("w", MUTED), ("d", C[RAID]))) + "</defs>")
+    body = [defs]
+
+    def bar(y, segs, hatch=False, labels=None):
+        x = x0
+        for i, (ms, kind) in enumerate(segs):
+            w = ms * k
+            fill = (f"url(#h-{kind})" if hatch else (MUTED if kind == "w" else C[RAID]))
+            body.append(rect(x, y, max(w, 1.5), h, fill, "#fff", 1, 0))
+            if labels:
+                body.append(text(x + w / 2, y + h + 17, labels[i], 14, 600, MUTED, "middle"))
+            x += w
+        return x
+
+    def row(y, name, sub):
+        body.append(text(20, y + 15, name, 19, 700, INK))
+        body.append(text(20, y + 36, sub, 16, 400, MUTED))
+
+    body.append(text(20, 26, "a typical upload, rounded from a production log", 17, 700, MUTED))
+    y = 44
+    row(y, "data file, ~350 KB", "FTP · 40% waiting")
+    end = bar(y, [(600, "w"), (1700, "d"), (500, "w")],
+              labels=["setup: 4 round trips", "data", "finish: 3"])
+    body.append(text(end + 10, y + 24, "≈ 3 s", 19, 700, INK))
+    y = 122
+    row(y, "log file, ~5 KB", "FTP · almost all waiting")
+    end = bar(y, [(800, "w"), (5, "d"), (500, "w")])
+    body.append(text(end + 10, y + 24, "≈ 1.3 s", 19, 700, INK))
+
+    body.append(line(20, 186, 1180, 186, GRID, 1))
+    body.append(text(20, 214, f"computed with a {rtt} ms round trip", 17, 700, MUTED))
+    y = 232
+    row(y, "data file, ~350 KB", "CoAP, 1 KB blocks, one at a time")
+    bar(y, [(3000, "w")], hatch=True)
+    body.append(rect(1086, y - 4, 14, h + 8, "#fff", "none", 0))
+    body.append(line(1086, y - 4, 1092, y + h + 4, INK, 2))
+    body.append(line(1094, y - 4, 1100, y + h + 4, INK, 2))
+    body.append(rect(1100, y, 20, h, "url(#h-w)", "#fff", 1, 0))
+    body.append(text(1128, y + 24, "≈ 1 min", 19, 700, C[TW]))
+    y = 300
+    row(y, "data file, ~350 KB", "one connection kept open")
+    end = bar(y, [(rtt, "w"), (1700, "d")], hatch=True)
+    body.append(text(end + 10, y + 24, "≈ 2 s", 19, 700, INK))
+    y = 368
+    row(y, "log file, ~5 KB", "sent on that same connection")
+    end = bar(y, [(rtt, "w"), (5, "d")], hatch=True)
+    body.append(text(end + 10, y + 24, "≈ 0.2 s", 19, 700, INK))
+
+    lx = 20
+    for fill, label in [(MUTED, "waiting for a reply"), (C[RAID], "moving bytes"), ("url(#h-w)", "computed")]:
+        body.append(rect(lx, 438, 22, 16, fill, MUTED if fill.startswith("url") else "none", 1, 2))
+        body.append(text(lx + 30, 452, label, 16, 400, INK))
+        lx += 70 + 9 * len(label)
+    body.append(text(1180, 452, "time ≈ round trips × RTT + bytes ÷ rate", 18, 700, INK, "end"))
+    return fig(1220, 470, body)
+
 if __name__ == "__main__":
     figs = [("fleet_paths.svg", paths), ("fleet_loop.svg", loop), ("fleet_audiences.svg", audiences),
             ("fleet_signals.svg", signals), ("fleet_fanout.svg", fanout), ("fleet_brokers.svg", brokers),
             ("fleet_dashboard.svg", dashboard), ("fleet_scales.svg", scales), ("fleet_tracker.svg", tracker),
-            ("fleet_trucks.svg", trucks), ("fleet_console.svg", console), ("fleet_acting.svg", acting)]
+            ("fleet_trucks.svg", trucks), ("fleet_console.svg", console), ("fleet_acting.svg", acting),
+            ("fleet_upload.svg", upload)]
     for name, f in figs:
         print(save(HERE, name, f()))
