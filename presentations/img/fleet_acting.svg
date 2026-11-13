@@ -14,5 +14,5 @@
 <rect x="760.0" y="20.0" width="320.0" height="90.0" rx="10" fill="#ffe4e6" stroke="#e11d48" stroke-width="2"/>
 <text x="920.0" y="61.0" text-anchor="middle" font-size="26" font-weight="700" fill="#e11d48">update</text>
 <text x="920.0" y="89.0" text-anchor="middle" font-size="22" font-weight="400" fill="#0f172a">Lab 8 stretch: signed OTA</text>
-<text x="920.0" y="142.0" text-anchor="middle" font-size="18" font-weight="400" fill="#475569">200 nodes, one key</text>
+<text x="920.0" y="142.0" text-anchor="middle" font-size="18" font-weight="400" fill="#475569">200 nodes, one signed image</text>
 </svg>

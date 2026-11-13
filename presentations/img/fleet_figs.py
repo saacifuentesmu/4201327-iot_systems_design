@@ -401,7 +401,7 @@ def console():
 def acting():
     steps = [("see", OMD, "Lab 7: the dashboard", "a person reads red"),
              ("recover", SCD, "Lab 8: watchdog, fail-safe", "the node fixes itself"),
-             ("update", TW, "Lab 8 stretch: signed OTA", "200 nodes, one key")]
+             ("update", TW, "Lab 8 stretch: signed OTA", "200 nodes, one signed image")]
     body, x = [], 20
     for i, (name, col, sub, note) in enumerate(steps):
         body.append(box(x, 20, 320, 90, name, col, 26, sub))

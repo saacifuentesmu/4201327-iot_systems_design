@@ -371,7 +371,9 @@ The dashboard tells Edwin which node to visit. It can't fix one, or update 200.
 <!--
 35:00–35:30. Pillar 3 (watching the system over time) now exists. Pillar 2 (signed code)
 is Lab 8's stretch: the same path the telemetry comes up is how an update would go
-down. And Samuel's chaos script: the dashboard is how you'll prove recovery happened
+down. Signed means the private key stays with the vendor and every node holds only the
+public key: a node stolen from the field can't sign an update for the other 199. Contrast
+the team's shared DTLS key, where one stolen node gives the key to all of them. And Samuel's chaos script: the dashboard is how you'll prove recovery happened
 without anyone touching a board.
 -->
 
